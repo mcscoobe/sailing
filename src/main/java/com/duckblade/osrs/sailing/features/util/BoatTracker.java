@@ -29,8 +29,6 @@ public class BoatTracker
 	implements PluginLifecycleComponent
 {
 
-	private static final int WORLD_ENTITY_TYPE_BOAT = 2;
-
 	private final Map<Integer, Boat> trackedBoats = new HashMap<>();
 	private final Client client;
 
@@ -43,7 +41,7 @@ public class BoatTracker
 	public void onWorldEntitySpawned(WorldEntitySpawned e)
 	{
 		WorldEntity we = e.getWorldEntity();
-		if (we.getConfig().getId() == WORLD_ENTITY_TYPE_BOAT)
+		if (we.getConfig().getId() == SailingUtil.WORLD_ENTITY_TYPE_BOAT)
 		{
 			int wvId = we.getWorldView().getId();
 			log.trace("tracking boat in wv {}", wvId);
