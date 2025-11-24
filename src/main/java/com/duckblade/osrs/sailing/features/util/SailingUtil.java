@@ -1,6 +1,5 @@
 package com.duckblade.osrs.sailing.features.util;
 
-import com.duckblade.osrs.sailing.model.Boat;
 import com.google.common.collect.ImmutableSet;
 import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +9,6 @@ import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.ObjectComposition;
 import net.runelite.api.Player;
-import net.runelite.api.WorldEntity;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
