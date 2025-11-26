@@ -57,7 +57,8 @@ public class SpeedBoostInfoBox
 	@Subscribe
 	public void onChatMessage(ChatMessage e)
 	{
-		if (e.getType() != ChatMessageType.GAMEMESSAGE || !SailingUtil.isSailing(client))
+		if (!SailingUtil.isSailing(client) ||
+			(e.getType() != ChatMessageType.GAMEMESSAGE && e.getType() != ChatMessageType.SPAM))
 		{
 			return;
 		}
