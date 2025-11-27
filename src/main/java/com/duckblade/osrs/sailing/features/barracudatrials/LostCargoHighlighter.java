@@ -28,7 +28,7 @@ import net.runelite.client.ui.overlay.OverlayUtil;
 
 @Slf4j
 @Singleton
-public class BarracudaTrialHelper
+public class LostCargoHighlighter
 	extends Overlay
 	implements PluginLifecycleComponent
 {
@@ -230,7 +230,7 @@ public class BarracudaTrialHelper
 	private Color crateColour;
 
 	@Inject
-	public BarracudaTrialHelper(Client client)
+	public LostCargoHighlighter(Client client)
 	{
 		this.client = client;
 

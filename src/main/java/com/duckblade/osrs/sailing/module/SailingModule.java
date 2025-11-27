@@ -5,7 +5,7 @@ import com.duckblade.osrs.sailing.features.facilities.CargoHoldTracker;
 import com.duckblade.osrs.sailing.features.facilities.LuffOverlay;
 import com.duckblade.osrs.sailing.features.facilities.SpeedBoostInfoBox;
 import com.duckblade.osrs.sailing.features.navigation.RapidsOverlay;
-import com.duckblade.osrs.sailing.features.barracudatrials.BarracudaTrialHelper;
+import com.duckblade.osrs.sailing.features.barracudatrials.LostCargoHighlighter;
 import com.duckblade.osrs.sailing.features.charting.CurrentDuckTaskTracker;
 import com.duckblade.osrs.sailing.features.charting.SeaChartOverlay;
 import com.duckblade.osrs.sailing.features.charting.SeaChartPanelOverlay;
@@ -47,7 +47,6 @@ public class SailingModule extends AbstractModule
 	Set<PluginLifecycleComponent> lifecycleComponents(
 		@Named("developerMode") boolean developerMode,
 
-		BarracudaTrialHelper barracudaTrialHelper,
 		BoatTracker boatTracker,
 		CargoHoldTracker cargoHoldTracker,
 		Castaway castaway,
@@ -58,6 +57,7 @@ public class SailingModule extends AbstractModule
 		CurrentDuckTaskTracker currentDuckTaskTracker,
 		DeprioSailsOffHelm deprioSailsOffHelm,
 		GiantClam giantClam,
+		LostCargoHighlighter lostCargoHighlighter,
 		LostShipment lostShipment,
 		LuffOverlay luffOverlay,
 		MermaidTaskSolver mermaidTaskSolver,
@@ -73,7 +73,6 @@ public class SailingModule extends AbstractModule
 	)
 	{
 		var builder = ImmutableSet.<PluginLifecycleComponent>builder()
-			.add(barracudaTrialHelper)
 			.add(boatTracker)
 			.add(castaway)
 			.add(clueCasket)
@@ -83,6 +82,7 @@ public class SailingModule extends AbstractModule
 			.add(currentDuckTaskTracker)
 			.add(deprioSailsOffHelm)
 			.add(giantClam)
+			.add(lostCargoHighlighter)
 			.add(lostShipment)
 			.add(luffOverlay)
 			.add(mermaidTaskSolver)
