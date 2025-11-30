@@ -5,6 +5,7 @@ import com.duckblade.osrs.sailing.features.barracudatrials.HidePortalTransitions
 import com.duckblade.osrs.sailing.features.barracudatrials.JubblyJiveHelper;
 import com.duckblade.osrs.sailing.features.facilities.CargoHoldTracker;
 import com.duckblade.osrs.sailing.features.facilities.LuffOverlay;
+import com.duckblade.osrs.sailing.features.facilities.CrystalExtractorHighlight;
 import com.duckblade.osrs.sailing.features.facilities.SpeedBoostInfoBox;
 import com.duckblade.osrs.sailing.features.navigation.LightningCloudsOverlay;
 import com.duckblade.osrs.sailing.features.navigation.RapidsOverlay;
@@ -71,6 +72,7 @@ public class SailingModule extends AbstractModule
 		LostCargoHighlighter lostCargoHighlighter,
 		LostShipment lostShipment,
 		LuffOverlay luffOverlay,
+		CrystalExtractorHighlight crystalExtractorHighlight,
 		MermaidTaskSolver mermaidTaskSolver,
 		MysteriousGlow mysteriousGlow,
 		OceanMan oceanMan,
@@ -102,6 +104,7 @@ public class SailingModule extends AbstractModule
 			.add(lostCargoHighlighter)
 			.add(lostShipment)
 			.add(luffOverlay)
+			.add(crystalExtractorHighlight)
 			.add(mermaidTaskSolver)
 			.add(mysteriousGlow)
 			.add(oceanMan)

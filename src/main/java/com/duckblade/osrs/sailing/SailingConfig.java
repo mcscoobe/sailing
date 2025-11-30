@@ -185,15 +185,65 @@ public interface SailingConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "showSpeedBoostInfoBox",
-			name = "Show Speed Boost InfoBox",
-			description = "Show an InfoBox with the duration of your active speed boost.",
-			section = SECTION_FACILITIES,
-			position = 2
+		keyName = "showSpeedBoostInfoBox",
+		name = "Show Speed Boost InfoBox",
+		description = "Show an InfoBox with the duration of your active speed boost.",
+		section = SECTION_FACILITIES,
+		position = 2
 	)
 	default boolean showSpeedBoostInfoBox()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightCrystalExtractorHarvestable",
+		name = "Highlight Harvestable Extractor",
+		description = "Highlight the activated crystal extractor when it has a mote available.",
+		section = SECTION_FACILITIES,
+		position = 3
+	)
+	default boolean highlightCrystalExtractorHarvestable()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightCrystalExtractorHarvestableColour",
+		name = "Harvestable Colour",
+		description = "Colour to highlight the crystal extractor while animating.",
+		section = SECTION_FACILITIES,
+		position = 4
+	)
+	@Alpha
+	default Color highlightCrystalExtractorHarvestableColour()
+	{
+		return new Color(0xFF3FC4F0);
+	}
+
+	@ConfigItem(
+		keyName = "highlightCrystalExtractorInactive",
+		name = "Highlight Deactivated Extractor Deactivated",
+		description = "Highlight the activated crystal extractor when it is animating.",
+		section = SECTION_FACILITIES,
+		position = 5
+	)
+	default boolean highlightCrystalExtractorInactive()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightCrystalExtractorInactiveColour",
+		name = "Deactivated Colour",
+		description = "Colour to highlight the crystal extractor when it is deactivated.",
+		section = SECTION_FACILITIES,
+		position = 6
+	)
+	@Alpha
+	default Color highlightCrystalExtractorInactiveColour()
+	{
+		return Color.YELLOW;
 	}
 
 	enum CrewmateMuteMode
