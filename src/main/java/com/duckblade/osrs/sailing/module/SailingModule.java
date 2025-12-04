@@ -19,10 +19,7 @@ import com.duckblade.osrs.sailing.features.courier.CourierDestinationOverlay;
 import com.duckblade.osrs.sailing.features.courier.CourierTaskLedgerOverlay;
 import com.duckblade.osrs.sailing.features.courier.CourierTaskTracker;
 import com.duckblade.osrs.sailing.features.crewmates.CrewmateOverheadMuter;
-import com.duckblade.osrs.sailing.features.facilities.CargoHoldTracker;
-import com.duckblade.osrs.sailing.features.facilities.CrystalExtractorHighlight;
-import com.duckblade.osrs.sailing.features.facilities.LuffOverlay;
-import com.duckblade.osrs.sailing.features.facilities.SpeedBoostInfoBox;
+import com.duckblade.osrs.sailing.features.facilities.*;
 import com.duckblade.osrs.sailing.features.mes.DeprioSailsOffHelm;
 import com.duckblade.osrs.sailing.features.mes.HideStopNavigatingDuringTrials;
 import com.duckblade.osrs.sailing.features.mes.PrioritizeCargoHold;
@@ -75,6 +72,7 @@ public class SailingModule extends AbstractModule
 		CrewmateOverheadMuter crewmateOverheadMuter,
 		CurrentDuckTaskTracker currentDuckTaskTracker,
 		DeprioSailsOffHelm deprioSailsOffHelm,
+        FishingNetTracker fishingNetTracker,
 		HideStopNavigatingDuringTrials hideStopNavigatingDuringTrials,
 		GiantClam giantClam,
 		HidePortalTransitions hidePortalTransitions,
@@ -139,7 +137,8 @@ public class SailingModule extends AbstractModule
 		if (developerMode)
 		{
 			builder
-				.add(cargoHoldTracker);
+				.add(cargoHoldTracker)
+                .add(fishingNetTracker);
 		}
 
 		return builder.build();
