@@ -27,6 +27,7 @@ import com.duckblade.osrs.sailing.features.mes.DeprioSailsOffHelm;
 import com.duckblade.osrs.sailing.features.mes.HideStopNavigatingDuringTrials;
 import com.duckblade.osrs.sailing.features.mes.PrioritizeCargoHold;
 import com.duckblade.osrs.sailing.features.navigation.LightningCloudsOverlay;
+import com.duckblade.osrs.sailing.features.navigation.NavigationOverlay;
 import com.duckblade.osrs.sailing.features.navigation.RapidsOverlay;
 import com.duckblade.osrs.sailing.features.navigation.TrueTileIndicator;
 import com.duckblade.osrs.sailing.features.oceanencounters.Castaway;
@@ -96,6 +97,7 @@ public class SailingModule extends AbstractModule
 		SeaChartPanelOverlay seaChartPanelOverlay,
 		SeaChartTaskIndex seaChartTaskIndex,
 		SpeedBoostInfoBox speedBoostInfoBox,
+		NavigationOverlay navigationOverlay,
 		TrueTileIndicator trueTileIndicator,
 		WeatherTaskTracker weatherTaskTracker
 	)
@@ -127,6 +129,7 @@ public class SailingModule extends AbstractModule
 			.add(crystalExtractorHighlight)
 			.add(mermaidTaskSolver)
 			.add(mysteriousGlow)
+			.add(navigationOverlay)
 			.add(oceanMan)
 			.add(prioritizeCargoHold)
 			.add(rapidsOverlay)

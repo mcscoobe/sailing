@@ -58,7 +58,7 @@ public class TrueTileIndicator
 			return null;
 		}
 
-		if (mode == SailingConfig.TrueTileMode.AT_HELM
+		if (mode == SailingConfig.TrueTileMode.NAVIGATING
 			&& client.getTopLevelWorldView().getYellowClickAction() != Constants.CLICK_ACTION_SET_HEADING)
 		{
 			return null;
