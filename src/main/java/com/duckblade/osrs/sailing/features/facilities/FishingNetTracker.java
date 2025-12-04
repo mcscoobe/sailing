@@ -13,9 +13,13 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayLayer;
+import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.OverlayPriority;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.util.ArrayList;
 
 @Slf4j
 public class FishingNetTracker extends Overlay
@@ -34,6 +38,10 @@ public class FishingNetTracker extends Overlay
         this.client = client;
         this.configManager = configManager;
         this.boatTracker = boatTracker;
+
+        setLayer(OverlayLayer.ABOVE_WIDGETS);
+        setPosition(OverlayPosition.DYNAMIC);
+        setPriority(1000.0f);
 
     }
 
@@ -76,13 +84,14 @@ public class FishingNetTracker extends Overlay
         int netDownSpriteId = SpriteID.IconChevron16x16._2;
         int netUpSpriteId = SpriteID.IconChevron16x16._4;
         int firstNetDown, firstNetUp, secondNetDown, secondNetUp;
+        int rely;
         // chevron down icon id: 897 or 6860?
         // chevron up icon id: 897 or 6862?
         Widget widgetSailingRows = client.getWidget(InterfaceID.SailingSidepanel.FACILITIES_ROWS);
         if (widgetSailingRows == null) {
             return null;
         }
-
+        ArrayList<Widget> nets = new ArrayList<Widget>();
         Widget[] children = widgetSailingRows.getChildren();
         if (children == null) {
             return null;
@@ -91,36 +100,38 @@ public class FishingNetTracker extends Overlay
         Widget firstNet = null;
         int netUp;
         for (Widget child : children) {
-            if (child != null && child.getSpriteId() == netDownSpriteId) {
+            if (child != null && child.getSpriteId() == 897) {
+                rely = child.getRelativeY();
+                if (rely == 174 || rely == 208)
+                {
+                    nets.add(child);
+                }
+
                 log.debug("Found net down widget at index {} with the id {}", child.getIndex(), child.getId());
             }
-            else if (child != null && child.getSpriteId() == netUpSpriteId) {
-                firstNet = child;
+            else if (child != null && child.getSpriteId() == 897) {
+                rely = child.getRelativeY();
+                if (rely == 174 || rely == 208)
+                {
+                    nets.add(child);
+                }
                 log.debug("Found net up widget at index {} with the id {}", child.getIndex(), child.getId());
             }
         }
 
-        if (firstNet == null) {
-            return null;
-        }
 
         // Highlight around the widget
-        Rectangle bounds = firstNet.getBounds();
-        if (bounds == null) {
-            return null;
+        for (Widget netWidget : nets) {
+            if (netWidget == null) {
+                continue;
+            }
+            Rectangle bounds = netWidget.getBounds();
+            graphics.setColor(Color.YELLOW);
+            graphics.setStroke(new BasicStroke(2));
+            graphics.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
         }
 
-        // Semi-transparent fill
-        Color fill = new Color(255, 215, 0, 80); // gold with alpha
-        graphics.setColor(fill);
-        graphics.fill(bounds);
-
-        // Outline
-        graphics.setColor(Color.YELLOW);
-        graphics.setStroke(new BasicStroke(2f));
-        graphics.draw(bounds);
-
-        return bounds.getSize();
+        return null;
     }
 
 }
