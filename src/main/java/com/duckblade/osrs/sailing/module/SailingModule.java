@@ -33,6 +33,7 @@ import com.duckblade.osrs.sailing.features.oceanencounters.LostShipment;
 import com.duckblade.osrs.sailing.features.oceanencounters.MysteriousGlow;
 import com.duckblade.osrs.sailing.features.oceanencounters.OceanMan;
 import com.duckblade.osrs.sailing.features.salvaging.SalvagingHighlight;
+import com.duckblade.osrs.sailing.features.trawling.ShoalOverlay;
 import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -92,6 +93,7 @@ public class SailingModule extends AbstractModule
 		SeaChartOverlay seaChartOverlay,
 		SeaChartPanelOverlay seaChartPanelOverlay,
 		SeaChartTaskIndex seaChartTaskIndex,
+		ShoalOverlay shoalOverlay,
 		SpeedBoostInfoBox speedBoostInfoBox,
 		WeatherTaskTracker weatherTaskTracker
 	)
@@ -130,6 +132,7 @@ public class SailingModule extends AbstractModule
 			.add(seaChartOverlay)
 			.add(seaChartPanelOverlay)
 			.add(seaChartTaskIndex)
+			.add(shoalOverlay)
 			.add(speedBoostInfoBox)
 			.add(weatherTaskTracker);
 

@@ -322,6 +322,31 @@ public interface SailingConfig extends Config
 		return Color.ORANGE;
 	}
 
+	@ConfigItem(
+		keyName = "trawlingHighlightShoals",
+		name = "Highlight Shoals",
+		description = "Highlight fish shoals with a 4x4 tile area.",
+		section = SECTION_TRAWLING,
+		position = 5
+	)
+	default boolean trawlingHighlightShoals()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "trawlingShoalHighlightColour",
+		name = "Shoal Highlight Colour",
+		description = "Colour to highlight fish shoals.",
+		section = SECTION_TRAWLING,
+		position = 6
+	)
+	@Alpha
+	default Color trawlingShoalHighlightColour()
+	{
+		return Color.CYAN;
+	}
+
 	enum CrewmateMuteMode
 	{
 		NONE,
