@@ -214,9 +214,44 @@ public class FishingNetTracker extends Overlay
             return;
         }
         
+        // Check if widget is actually visible within the scrollable container
+        if (!isWidgetInView(widget)) {
+            return;
+        }
+        
         graphics.setColor(color);
         graphics.setStroke(new BasicStroke(3));
         graphics.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    }
+    
+    private boolean isWidgetInView(Widget widget) {
+        if (widget == null) {
+            return false;
+        }
+        
+        Rectangle widgetBounds = widget.getBounds();
+        
+        // Get the scrollable container
+        Widget scrollContainer = client.getWidget(InterfaceID.SailingSidepanel.FACILITIES_ROWS);
+        if (scrollContainer == null) {
+            return false;
+        }
+        
+        // The parent of FACILITIES_ROWS is the visible viewport
+        Widget viewport = scrollContainer.getParent();
+        if (viewport == null) {
+            // Fallback: use the scroll container itself
+            viewport = scrollContainer;
+        }
+        
+        Rectangle viewportBounds = viewport.getBounds();
+        
+        // Widget is visible only if it's within the viewport bounds
+        // Check if the widget's Y position is within the visible area
+        boolean isVisible = widgetBounds.y >= viewportBounds.y && 
+                           widgetBounds.y + widgetBounds.height <= viewportBounds.y + viewportBounds.height;
+        
+        return isVisible;
     }
 
     private Widget getNetWidget(Widget parent, int index) {
