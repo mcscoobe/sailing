@@ -164,6 +164,10 @@ public class FishingNetTracker extends Overlay
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        if (!config.trawlingHighlightNetButtons()) {
+            return null;
+        }
+        
         if (!shouldHighlightStarboard && !shouldHighlightPort) {
             return null;
         }
@@ -179,14 +183,16 @@ public class FishingNetTracker extends Overlay
         Widget portDown = getNetWidget(widgetSailingRows, PORT_DOWN);
         Widget portUp = getNetWidget(widgetSailingRows, PORT_UP);
         
+        Color highlightColor = config.trawlingHighlightColour();
+        
         // Highlight starboard net buttons if needed
         if (shouldHighlightStarboard) {
             if (isStarboardTooDeep) {
                 // Net is too deep, highlight UP button (raise the net)
-                highlightWidget(graphics, starboardUp, config.fishingNetRaiseHighlightColour());
+                highlightWidget(graphics, starboardUp, highlightColor);
             } else {
                 // Net is too shallow, highlight DOWN button (lower the net)
-                highlightWidget(graphics, starboardDown, config.fishingNetLowerHighlightColour());
+                highlightWidget(graphics, starboardDown, highlightColor);
             }
         }
         
@@ -194,10 +200,10 @@ public class FishingNetTracker extends Overlay
         if (shouldHighlightPort) {
             if (isPortTooDeep) {
                 // Net is too deep, highlight UP button (raise the net)
-                highlightWidget(graphics, portUp, config.fishingNetRaiseHighlightColour());
+                highlightWidget(graphics, portUp, highlightColor);
             } else {
                 // Net is too shallow, highlight DOWN button (lower the net)
-                highlightWidget(graphics, portDown, config.fishingNetLowerHighlightColour());
+                highlightWidget(graphics, portDown, highlightColor);
             }
         }
 
