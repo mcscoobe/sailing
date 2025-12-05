@@ -347,6 +347,18 @@ public interface SailingConfig extends Config
 		return Color.CYAN;
 	}
 
+	@ConfigItem(
+		keyName = "trawlingShowNetCapacity",
+		name = "Show Net Capacity",
+		description = "Display the current fish count in your nets.",
+		section = SECTION_TRAWLING,
+		position = 7
+	)
+	default boolean trawlingShowNetCapacity()
+	{
+		return true;
+	}
+
 	enum CrewmateMuteMode
 	{
 		NONE,

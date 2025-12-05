@@ -33,6 +33,7 @@ import com.duckblade.osrs.sailing.features.oceanencounters.LostShipment;
 import com.duckblade.osrs.sailing.features.oceanencounters.MysteriousGlow;
 import com.duckblade.osrs.sailing.features.oceanencounters.OceanMan;
 import com.duckblade.osrs.sailing.features.salvaging.SalvagingHighlight;
+import com.duckblade.osrs.sailing.features.trawling.NetCapacityOverlay;
 import com.duckblade.osrs.sailing.features.trawling.ShoalOverlay;
 import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.google.common.collect.ImmutableSet;
@@ -86,6 +87,7 @@ public class SailingModule extends AbstractModule
 		CrystalExtractorHighlight crystalExtractorHighlight,
 		MermaidTaskSolver mermaidTaskSolver,
 		MysteriousGlow mysteriousGlow,
+		NetCapacityOverlay netCapacityOverlay,
 		OceanMan oceanMan,
 		PrioritizeCargoHold prioritizeCargoHold,
 		RapidsOverlay rapidsOverlay,
@@ -125,6 +127,7 @@ public class SailingModule extends AbstractModule
 			.add(crystalExtractorHighlight)
 			.add(mermaidTaskSolver)
 			.add(mysteriousGlow)
+			.add(netCapacityOverlay)
 			.add(oceanMan)
 			.add(prioritizeCargoHold)
 			.add(rapidsOverlay)

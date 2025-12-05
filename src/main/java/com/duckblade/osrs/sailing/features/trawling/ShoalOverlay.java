@@ -122,7 +122,6 @@ public class ShoalOverlay extends Overlay
             return null;
         }
 
-        log.debug("Rendering {} shoals", shoals.size());
         for (GameObject shoal : shoals) {
             renderShoal(graphics, shoal);
         }
@@ -134,10 +133,7 @@ public class ShoalOverlay extends Overlay
         Polygon poly = Perspective.getCanvasTileAreaPoly(client, shoal.getLocalLocation(), SHOAL_HIGHLIGHT_SIZE);
         if (poly != null) {
             Color color = config.trawlingShoalHighlightColour();
-            log.debug("Drawing polygon for shoal at {} with color {}", shoal.getLocalLocation(), color);
             OverlayUtil.renderPolygon(graphics, poly, color);
-        } else {
-            log.debug("Polygon is null for shoal at {}", shoal.getLocalLocation());
         }
     }
 }
