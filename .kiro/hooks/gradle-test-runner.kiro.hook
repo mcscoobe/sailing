@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Run Gradle Test",
+  "description": "Executes the gradle test task for the project when triggered by a button click",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "./gradlew.bat runTestClient"
+  },
+  "workspaceFolderName": "sailing",
+  "shortName": "gradle-test-runner"
+}
