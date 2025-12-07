@@ -160,7 +160,7 @@ public class SailingModule extends AbstractModule
 		if (developerMode)
 		{
 			builder
-				.add(cargoHoldTracker)
+				.add(cargoHoldTracker);
 		}
 
 		return builder.build();
