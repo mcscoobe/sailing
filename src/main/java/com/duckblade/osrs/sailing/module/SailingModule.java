@@ -37,7 +37,9 @@ import com.duckblade.osrs.sailing.features.oceanencounters.MysteriousGlow;
 import com.duckblade.osrs.sailing.features.oceanencounters.OceanMan;
 import com.duckblade.osrs.sailing.features.salvaging.SalvagingHighlight;
 import com.duckblade.osrs.sailing.features.trawling.NetCapacityOverlay;
+import com.duckblade.osrs.sailing.features.trawling.NetCapacityTracker;
 import com.duckblade.osrs.sailing.features.trawling.ShoalOverlay;
+import com.duckblade.osrs.sailing.features.trawling.NetDepthTimer;
 import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -77,7 +79,6 @@ public class SailingModule extends AbstractModule
 		CrewmateOverheadMuter crewmateOverheadMuter,
 		CurrentDuckTaskTracker currentDuckTaskTracker,
 		DeprioSailsOffHelm deprioSailsOffHelm,
-        FishingNetTracker fishingNetTracker,
 		HideStopNavigatingDuringTrials hideStopNavigatingDuringTrials,
 		GiantClam giantClam,
 		HidePortalTransitions hidePortalTransitions,
@@ -91,6 +92,7 @@ public class SailingModule extends AbstractModule
 		MermaidTaskSolver mermaidTaskSolver,
 		MysteriousGlow mysteriousGlow,
 		NetCapacityOverlay netCapacityOverlay,
+		NetCapacityTracker netCapacityTracker,
 		OceanMan oceanMan,
 		PrioritizeCargoHold prioritizeCargoHold,
 		RapidsOverlay rapidsOverlay,
@@ -103,57 +105,60 @@ public class SailingModule extends AbstractModule
 		SpeedBoostInfoBox speedBoostInfoBox,
 		NavigationOverlay navigationOverlay,
 		TrueTileIndicator trueTileIndicator,
-		WeatherTaskTracker weatherTaskTracker
+		WeatherTaskTracker weatherTaskTracker,
+        NetDepthTimer netDepthTimer
 	)
 	{
 		var builder = ImmutableSet.<PluginLifecycleComponent>builder()
-			.add(barracudaSplitsTracker)
-			.add(barracudaSplitsChatMessage)
-			.add(barracudaSplitsOverlayPanel)
-			.add(barracudaSplitsFileWriter)
+			 .add(barracudaSplitsTracker)
+			 .add(barracudaSplitsChatMessage)
+			 .add(barracudaSplitsOverlayPanel)
+			 .add(barracudaSplitsFileWriter)
 			.add(boatTracker)
-			.add(castaway)
-			.add(clueCasket)
-			.add(clueTurtle)
-			.add(courierTaskLedgerOverlay)
-			.add(courierTaskTracker)
-			.add(courierDestinationOverlay)
-			.add(crewmateOverheadMuter)
-			.add(currentDuckTaskTracker)
-			.add(deprioSailsOffHelm)
-			.add(hideStopNavigatingDuringTrials)
-			.add(giantClam)
-			.add(hidePortalTransitions)
-			.add(jubblyJiveHelper)
-			.add(temporTantrumHelper)
-			.add(lightningCloudsOverlay)
-			.add(lostCargoHighlighter)
-			.add(lostShipment)
-			.add(luffOverlay)
-			.add(crystalExtractorHighlight)
-			.add(mermaidTaskSolver)
-			.add(mysteriousGlow)
+			 .add(castaway)
+			 .add(clueCasket)
+			 .add(clueTurtle)
+			 .add(courierTaskLedgerOverlay)
+			 .add(courierTaskTracker)
+			 .add(courierDestinationOverlay)
+			 .add(crewmateOverheadMuter)
+			 .add(currentDuckTaskTracker)
+			 .add(deprioSailsOffHelm)
+			 .add(hideStopNavigatingDuringTrials)
+			 .add(giantClam)
+			 .add(hidePortalTransitions)
+			 .add(jubblyJiveHelper)
+			 .add(temporTantrumHelper)
+			 .add(lightningCloudsOverlay)
+			 .add(lostCargoHighlighter)
+			 .add(lostShipment)
+			 .add(luffOverlay)
+			 .add(crystalExtractorHighlight)
+			 .add(mermaidTaskSolver)
+			 .add(mysteriousGlow)
 			.add(netCapacityOverlay)
+			.add(netCapacityTracker)
 			.add(navigationOverlay)
-			.add(oceanMan)
-			.add(prioritizeCargoHold)
-			.add(rapidsOverlay)
-			.add(reverseBeep)
-			.add(salvagingHighlight)
-			.add(seaChartOverlay)
-			.add(seaChartPanelOverlay)
-			.add(seaChartTaskIndex)
-			.add(shoalOverlay)
-			.add(speedBoostInfoBox)
-			.add(trueTileIndicator)
-			.add(weatherTaskTracker);
+			 .add(oceanMan)
+			 .add(prioritizeCargoHold)
+			 .add(rapidsOverlay)
+			 .add(reverseBeep)
+			 .add(salvagingHighlight)
+			 .add(seaChartOverlay)
+			 .add(seaChartPanelOverlay)
+			 .add(seaChartTaskIndex)
+			 .add(shoalOverlay)
+			 .add(speedBoostInfoBox)
+			 .add(trueTileIndicator)
+			 .add(weatherTaskTracker);
 
 		// features still in development
 		if (developerMode)
 		{
 			builder
 				.add(cargoHoldTracker)
-                .add(fishingNetTracker);
+				// .add(fishingNetTracker) // Disabled - replaced by NetDepthTimer
+				.add(netDepthTimer);
 		}
 
 		return builder.build();
