@@ -25,24 +25,12 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 	private final Client client;
 	private final SailingConfig config;
 	
-	// Port Roberts area boundaries (top-level coordinates)
-	private static final int PORT_ROBERTS_WEST = 1822;
-	private static final int PORT_ROBERTS_EAST = 2050;
-	private static final int PORT_ROBERTS_SOUTH = 3129;
-	private static final int PORT_ROBERTS_NORTH = 3414;
-	
-	// Southern Expanse area boundaries (top-level coordinates)
-	private static final int SOUTHERN_EXPANSE_WEST = 1870;
-	private static final int SOUTHERN_EXPANSE_EAST = 2180;
-	private static final int SOUTHERN_EXPANSE_SOUTH = 2171;
-	private static final int SOUTHERN_EXPANSE_NORTH = 2512;
-	
-	// Rainbow Reef area boundaries (top-level coordinates)
-	private static final int RAINBOW_REEF_WEST = 2075;
-	private static final int RAINBOW_REEF_EAST = 2406;
-	private static final int RAINBOW_REEF_SOUTH = 2179;
-	private static final int RAINBOW_REEF_NORTH = 2450;
-	
+	// ya the numbers are magic, figure it out
+	private static final ShoalFishingArea PORT_ROBERTS = new ShoalFishingArea(1822, 2050, 3129, 3414);
+	private static final ShoalFishingArea SOUTHERN_EXPANSE = new ShoalFishingArea(1870, 2180, 2171, 2512);
+	private static final ShoalFishingArea RAINBOW_REEF = new ShoalFishingArea(2075, 2406, 2179, 2450);
+	private static final ShoalFishingArea BUCCANEERS_HAVEN = new ShoalFishingArea(1984, 2268, 3594, 3771);
+	// todo move indices into object with route
 	// Stop point indices for HALIBUT_PORT_ROBERTS (9 stop points)
 	private static final int[] PORT_ROBERTS_STOP_INDICES = {0, 45, 79, 139, 168, 214, 258, 306, 337};
 	
@@ -51,6 +39,9 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 	
 	// Stop point indices for BLUEFIN_RAINBOW_REEF (10 stop points)
 	private static final int[] RAINBOW_REEF_STOP_INDICES = {0, 20, 52, 73, 108, 155, 188, 221, 264, 313};
+	
+	// Stop point indices for BLUEFIN_BUCCANEERS_HAVEN (12 stop points)
+	private static final int[] BUCCANEERS_HAVEN_STOP_INDICES = {0, 22, 57, 92, 126, 165, 194, 229, 269, 304, 352, 386};
 	
 	// Color for stop point overlays (red)
 	private static final Color STOP_POINT_COLOR = Color.RED;
@@ -95,39 +86,30 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 		Color pathColor = config.trawlingHardcodedShoalPathColour();
 		
 		// Only render Port Roberts path if player is within the Port Roberts area
-		if (isInArea(playerLocation, PORT_ROBERTS_WEST, PORT_ROBERTS_EAST, PORT_ROBERTS_SOUTH, PORT_ROBERTS_NORTH)) {
+		if (PORT_ROBERTS.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, pathColor, "Halibut - Port Roberts");
 			renderStopPoints(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, PORT_ROBERTS_STOP_INDICES);
 		}
 		
 		// Only render Southern Expanse path if player is within the Southern Expanse area
-		if (isInArea(playerLocation, SOUTHERN_EXPANSE_WEST, SOUTHERN_EXPANSE_EAST, SOUTHERN_EXPANSE_SOUTH, SOUTHERN_EXPANSE_NORTH)) {
+		if (SOUTHERN_EXPANSE.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor, "Halibut - Southern Expanse");
 			renderStopPoints(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, SOUTHERN_EXPANSE_STOP_INDICES);
 		}
 		
 		// Only render Rainbow Reef path if player is within the Rainbow Reef area
-		if (isInArea(playerLocation, RAINBOW_REEF_WEST, RAINBOW_REEF_EAST, RAINBOW_REEF_SOUTH, RAINBOW_REEF_NORTH)) {
+		if (RAINBOW_REEF.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.BLUEFIN_RAINBOW_REEF, pathColor, "Bluefin - Rainbow Reef");
 			renderStopPoints(graphics, ShoalPaths.BLUEFIN_RAINBOW_REEF, RAINBOW_REEF_STOP_INDICES);
 		}
 		
+		// Only render Buccaneers Haven path if player is within the Buccaneers Haven area
+		if (BUCCANEERS_HAVEN.contains(playerLocation)) {
+			renderPath(graphics, ShoalPaths.BLUEFIN_BUCCANEERS_HAVEN, pathColor, "Bluefin - Buccaneers Haven");
+			renderStopPoints(graphics, ShoalPaths.BLUEFIN_BUCCANEERS_HAVEN, BUCCANEERS_HAVEN_STOP_INDICES);
+		}
+		
 		return null;
-	}
-
-	/**
-	 * Check if the player is within a specific rectangular area.
-	 * @param playerLocation The player's current world location
-	 * @param westX Western boundary (minimum X)
-	 * @param eastX Eastern boundary (maximum X)
-	 * @param southY Southern boundary (minimum Y)
-	 * @param northY Northern boundary (maximum Y)
-	 * @return true if player is within the bounds
-	 */
-	private boolean isInArea(WorldPoint playerLocation, int westX, int eastX, int southY, int northY) {
-		int x = playerLocation.getX();
-		int y = playerLocation.getY();
-		return x >= westX && x <= eastX && y >= southY && y <= northY;
 	}
 
 	private void renderPath(Graphics2D graphics, WorldPoint[] path, Color pathColor, String label) {

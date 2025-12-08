@@ -88,9 +88,6 @@ public class NetDepthTimer extends Overlay
     
     // Track the active shoal timer
     private ShoalTracker activeTracker = null;
-    
-    // Track last known waypoint count to detect new stops
-    private int lastWaypointCount = 0;
 
     @Inject
     public NetDepthTimer(Client client, SailingConfig config, BoatTracker boatTracker, ShoalPathTracker shoalPathTracker) {
