@@ -1,6 +1,7 @@
 package com.duckblade.osrs.sailing.features.trawling;
 
 import com.duckblade.osrs.sailing.SailingConfig;
+import com.duckblade.osrs.sailing.features.util.SailingUtil;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -23,6 +24,18 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 	@Nonnull
 	private final Client client;
 	private final SailingConfig config;
+	
+	// Port Roberts area boundaries (top-level coordinates)
+	private static final int PORT_ROBERTS_WEST = 1822;
+	private static final int PORT_ROBERTS_EAST = 2050;
+	private static final int PORT_ROBERTS_SOUTH = 3129;
+	private static final int PORT_ROBERTS_NORTH = 3414;
+	
+	// Southern Expanse area boundaries (top-level coordinates)
+	private static final int SOUTHERN_EXPANSE_WEST = 1870;
+	private static final int SOUTHERN_EXPANSE_EAST = 2180;
+	private static final int SOUTHERN_EXPANSE_SOUTH = 2171;
+	private static final int SOUTHERN_EXPANSE_NORTH = 2512;
 	
 	// Stop point indices for HALIBUT_PORT_ROBERTS (9 stop points)
 	private static final int[] PORT_ROBERTS_STOP_INDICES = {0, 45, 79, 139, 168, 214, 258, 306, 337};
@@ -59,44 +72,47 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 
 	@Override
 	public Dimension render(Graphics2D graphics) {
-		WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+		// Only render paths if player is sailing
+		if (!SailingUtil.isSailing(client)) {
+			return null;
+		}
+		
+		// Get top-level world coordinates (actual world position, not boat instance position)
+		WorldPoint playerLocation = SailingUtil.getTopLevelWorldPoint(client);
 		if (playerLocation == null) {
 			return null;
 		}
 
 		Color pathColor = config.trawlingHardcodedShoalPathColour();
 		
-		// Only render paths if player is in the same region as the path
-		// if (isInPathRegion(playerLocation, ShoalPaths.HALIBUT_PORT_ROBERTS)) {
-			
-		// }
-		// if (isInPathRegion(playerLocation, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE)) {
-		// 	renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor, "Halibut - Southern Expanse");
-		// }
-		renderPath(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, pathColor, "Halibut - Port Roberts");
-		renderStopPoints(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, PORT_ROBERTS_STOP_INDICES);
+		// Only render Port Roberts path if player is within the Port Roberts area
+		if (isInArea(playerLocation, PORT_ROBERTS_WEST, PORT_ROBERTS_EAST, PORT_ROBERTS_SOUTH, PORT_ROBERTS_NORTH)) {
+			renderPath(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, pathColor, "Halibut - Port Roberts");
+			renderStopPoints(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, PORT_ROBERTS_STOP_INDICES);
+		}
+		
+		// Only render Southern Expanse path if player is within the Southern Expanse area
+		if (isInArea(playerLocation, SOUTHERN_EXPANSE_WEST, SOUTHERN_EXPANSE_EAST, SOUTHERN_EXPANSE_SOUTH, SOUTHERN_EXPANSE_NORTH)) {
+			renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor, "Halibut - Southern Expanse");
+			renderStopPoints(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, SOUTHERN_EXPANSE_STOP_INDICES);
+		}
+		
 		return null;
 	}
 
 	/**
-	 * Check if the player is in the same region as any point in the path.
-	 * A region is 64x64 tiles, so we check if the player's region ID matches any region used by the path.
+	 * Check if the player is within a specific rectangular area.
+	 * @param playerLocation The player's current world location
+	 * @param westX Western boundary (minimum X)
+	 * @param eastX Eastern boundary (maximum X)
+	 * @param southY Southern boundary (minimum Y)
+	 * @param northY Northern boundary (maximum Y)
+	 * @return true if player is within the bounds
 	 */
-	private boolean isInPathRegion(WorldPoint playerLocation, WorldPoint[] path) {
-		if (path == null || path.length == 0) {
-			return false;
-		}
-
-		int playerRegionID = playerLocation.getRegionID();
-		
-		// Check if any point in the path is in the same region as the player
-		for (WorldPoint point : path) {
-			if (point.getRegionID() == playerRegionID) {
-				return true;
-			}
-		}
-		
-		return false;
+	private boolean isInArea(WorldPoint playerLocation, int westX, int eastX, int southY, int northY) {
+		int x = playerLocation.getX();
+		int y = playerLocation.getY();
+		return x >= westX && x <= eastX && y >= southY && y <= northY;
 	}
 
 	private void renderPath(Graphics2D graphics, WorldPoint[] path, Color pathColor, String label) {
