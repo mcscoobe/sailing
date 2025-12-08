@@ -32,7 +32,7 @@ import java.util.Set;
 public class ShoalOverlay extends Overlay
         implements PluginLifecycleComponent {
 
-    private static final int SHOAL_HIGHLIGHT_SIZE = 9;
+    private static final int SHOAL_HIGHLIGHT_SIZE = 10;
 
     // Clickbox IDs
     private static final Set<Integer> SHOAL_CLICKBOX_IDS = ImmutableSet.of(

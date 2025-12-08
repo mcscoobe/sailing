@@ -37,14 +37,23 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 	private static final int SOUTHERN_EXPANSE_SOUTH = 2171;
 	private static final int SOUTHERN_EXPANSE_NORTH = 2512;
 	
+	// Rainbow Reef area boundaries (top-level coordinates)
+	private static final int RAINBOW_REEF_WEST = 2075;
+	private static final int RAINBOW_REEF_EAST = 2406;
+	private static final int RAINBOW_REEF_SOUTH = 2179;
+	private static final int RAINBOW_REEF_NORTH = 2450;
+	
 	// Stop point indices for HALIBUT_PORT_ROBERTS (9 stop points)
 	private static final int[] PORT_ROBERTS_STOP_INDICES = {0, 45, 79, 139, 168, 214, 258, 306, 337};
 	
 	// Stop point indices for HALIBUT_SOUTHERN_EXPANSE (10 stop points)
 	private static final int[] SOUTHERN_EXPANSE_STOP_INDICES = {0, 15, 60, 97, 132, 185, 273, 343, 369, 419};
 	
-	// Color for stop point overlays (FF06B4FA = semi-transparent cyan)
-	private static final Color STOP_POINT_COLOR = new Color(0x06, 0xB4, 0xFA, 0xFF);
+	// Stop point indices for BLUEFIN_RAINBOW_REEF (10 stop points)
+	private static final int[] RAINBOW_REEF_STOP_INDICES = {0, 20, 52, 73, 108, 155, 188, 221, 264, 313};
+	
+	// Color for stop point overlays (red)
+	private static final Color STOP_POINT_COLOR = Color.RED;
 
 	@Inject
 	public HardcodedShoalPathOverlay(@Nonnull Client client, SailingConfig config) {
@@ -95,6 +104,12 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 		if (isInArea(playerLocation, SOUTHERN_EXPANSE_WEST, SOUTHERN_EXPANSE_EAST, SOUTHERN_EXPANSE_SOUTH, SOUTHERN_EXPANSE_NORTH)) {
 			renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor, "Halibut - Southern Expanse");
 			renderStopPoints(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, SOUTHERN_EXPANSE_STOP_INDICES);
+		}
+		
+		// Only render Rainbow Reef path if player is within the Rainbow Reef area
+		if (isInArea(playerLocation, RAINBOW_REEF_WEST, RAINBOW_REEF_EAST, RAINBOW_REEF_SOUTH, RAINBOW_REEF_NORTH)) {
+			renderPath(graphics, ShoalPaths.BLUEFIN_RAINBOW_REEF, pathColor, "Bluefin - Rainbow Reef");
+			renderStopPoints(graphics, ShoalPaths.BLUEFIN_RAINBOW_REEF, RAINBOW_REEF_STOP_INDICES);
 		}
 		
 		return null;
@@ -205,46 +220,22 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 	}
 
 	private void renderStopPointArea(Graphics2D graphics, WorldPoint centerPoint) {
-		// Draw a 10x10 tile border centered on the stop point
-		int halfSize = 5; // 5 tiles in each direction from center
-		
-		// Get the four corner points of the 10x10 area
-		WorldPoint topLeft = new WorldPoint(centerPoint.getX() - halfSize, centerPoint.getY() + halfSize, centerPoint.getPlane());
-		WorldPoint topRight = new WorldPoint(centerPoint.getX() + halfSize + 1, centerPoint.getY() + halfSize, centerPoint.getPlane());
-		WorldPoint bottomLeft = new WorldPoint(centerPoint.getX() - halfSize, centerPoint.getY() - halfSize - 1, centerPoint.getPlane());
-		WorldPoint bottomRight = new WorldPoint(centerPoint.getX() + halfSize + 1, centerPoint.getY() - halfSize - 1, centerPoint.getPlane());
-		
-		// Convert to local points
-		LocalPoint localTL = LocalPoint.fromWorld(client, topLeft);
-		LocalPoint localTR = LocalPoint.fromWorld(client, topRight);
-		LocalPoint localBL = LocalPoint.fromWorld(client, bottomLeft);
-		LocalPoint localBR = LocalPoint.fromWorld(client, bottomRight);
-		
-		if (localTL == null || localTR == null || localBL == null || localBR == null) {
+		// Convert WorldPoint to LocalPoint
+		LocalPoint localPoint = LocalPoint.fromWorld(client, centerPoint);
+		if (localPoint == null) {
 			return;
 		}
-		
-		// Convert to canvas points
-		net.runelite.api.Point canvasTL = Perspective.localToCanvas(client, localTL, centerPoint.getPlane());
-		net.runelite.api.Point canvasTR = Perspective.localToCanvas(client, localTR, centerPoint.getPlane());
-		net.runelite.api.Point canvasBL = Perspective.localToCanvas(client, localBL, centerPoint.getPlane());
-		net.runelite.api.Point canvasBR = Perspective.localToCanvas(client, localBR, centerPoint.getPlane());
-		
-		if (canvasTL == null || canvasTR == null || canvasBL == null || canvasBR == null) {
+
+		// Convert to canvas point
+		net.runelite.api.Point canvasPoint = Perspective.localToCanvas(client, localPoint, centerPoint.getPlane());
+		if (canvasPoint == null) {
 			return;
 		}
-		
-		// Draw the border as four lines connecting the corners
+
+		// Draw stop point marker - red filled circle with white outline (matches trace rendering)
 		graphics.setColor(STOP_POINT_COLOR);
-		graphics.setStroke(new BasicStroke(3));
-		
-		// Top line
-		graphics.drawLine(canvasTL.getX(), canvasTL.getY(), canvasTR.getX(), canvasTR.getY());
-		// Right line
-		graphics.drawLine(canvasTR.getX(), canvasTR.getY(), canvasBR.getX(), canvasBR.getY());
-		// Bottom line
-		graphics.drawLine(canvasBR.getX(), canvasBR.getY(), canvasBL.getX(), canvasBL.getY());
-		// Left line
-		graphics.drawLine(canvasBL.getX(), canvasBL.getY(), canvasTL.getX(), canvasTL.getY());
+		graphics.fillOval(canvasPoint.getX() - 5, canvasPoint.getY() - 5, 10, 10);
+		graphics.setColor(Color.WHITE);
+		graphics.drawOval(canvasPoint.getX() - 5, canvasPoint.getY() - 5, 10, 10);
 	}
 }
