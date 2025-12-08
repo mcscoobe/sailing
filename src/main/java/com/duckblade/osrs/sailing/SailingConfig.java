@@ -459,7 +459,7 @@ public interface SailingConfig extends Config
 	@Alpha
 	default Color trawlingHardcodedShoalPathColour()
 	{
-		return new Color(0, 255, 255, 150); // Semi-transparent cyan
+		return Color.WHITE;
 	}
 
 	@ConfigItem(

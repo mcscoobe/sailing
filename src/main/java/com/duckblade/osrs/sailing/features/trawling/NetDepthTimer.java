@@ -74,6 +74,7 @@ public class NetDepthTimer extends Overlay
     private final Client client;
     private final SailingConfig config;
     private final BoatTracker boatTracker;
+    private final ShoalPathTracker shoalPathTracker;
 
     // Track WorldEntity (moving shoal) for position monitoring
     private WorldEntity movingShoal = null;
@@ -83,12 +84,16 @@ public class NetDepthTimer extends Overlay
     
     // Track the active shoal timer
     private ShoalTracker activeTracker = null;
+    
+    // Track last known waypoint count to detect new stops
+    private int lastWaypointCount = 0;
 
     @Inject
-    public NetDepthTimer(Client client, SailingConfig config, BoatTracker boatTracker) {
+    public NetDepthTimer(Client client, SailingConfig config, BoatTracker boatTracker, ShoalPathTracker shoalPathTracker) {
         this.client = client;
         this.config = config;
         this.boatTracker = boatTracker;
+        this.shoalPathTracker = shoalPathTracker;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
         setPriority(1000.0f);
@@ -116,7 +121,7 @@ public class NetDepthTimer extends Overlay
 
     /**
      * Get current timer information for display in overlay
-     * @return TimerInfo object with current state, or null if no active tracker
+     * @return TimerInfo object with current state, or null if no shoal is being tracked
      */
     public TimerInfo getTimerInfo() {
         if (activeTracker == null) {
@@ -128,6 +133,11 @@ public class NetDepthTimer extends Overlay
     @Subscribe
     public void onWorldEntitySpawned(WorldEntitySpawned e) {
         WorldEntity entity = e.getWorldEntity();
+        
+        // Log all WorldEntity spawns to debug
+        if (entity.getConfig() != null) {
+            log.debug("WorldEntity spawned - Config ID: {}", entity.getConfig().getId());
+        }
         
         // Only track shoal WorldEntity
         if (entity.getConfig() != null && entity.getConfig().getId() == SHOAL_WORLD_ENTITY_CONFIG_ID) {
@@ -143,11 +153,15 @@ public class NetDepthTimer extends Overlay
         GameObject obj = e.getGameObject();
         int objectId = obj.getId();
         
+        log.debug("GameObject spawned: ID={}, isShoal={}", objectId, SHOAL_TIMINGS.containsKey(objectId));
+        
         if (SHOAL_TIMINGS.containsKey(objectId)) {
             // Store the shoal type when we first see it
             if (activeTracker == null || activeTracker.objectId != objectId) {
                 activeTracker = new ShoalTracker(objectId);
-                log.debug("Tracking shoal type: ID={}", objectId);
+                log.debug("Tracking shoal type: ID={}, movingShoal={}, hasSeenStop={}, activeTracker created", 
+                         objectId, movingShoal != null, hasSeenShoalStop);
+                log.debug("Overlay should now show calibration status");
             }
         }
     }
@@ -170,6 +184,22 @@ public class NetDepthTimer extends Overlay
 
     @Subscribe
     public void onGameTick(GameTick e) {
+        // If we don't have a moving shoal but have an active tracker, try to find it
+        if (movingShoal == null && activeTracker != null) {
+            // Try to find the WorldEntity in the scene
+            if (client.getTopLevelWorldView() != null) {
+                for (WorldEntity entity : client.getTopLevelWorldView().worldEntities()) {
+                    if (entity.getConfig() != null && entity.getConfig().getId() == SHOAL_WORLD_ENTITY_CONFIG_ID) {
+                        movingShoal = entity;
+                        lastShoalPosition = null;
+                        ticksAtSamePosition = 0;
+                        log.debug("Found shoal WorldEntity in scene, tracking movement");
+                        break;
+                    }
+                }
+            }
+        }
+        
         // Track WorldEntity movement to detect when it stops
         if (movingShoal != null && activeTracker != null) {
             net.runelite.api.coords.LocalPoint localPos = movingShoal.getCameraFocus();
@@ -190,7 +220,7 @@ public class NetDepthTimer extends Overlay
                     } else {
                         if (lastShoalPosition != null) {
                             log.debug("Shoal moved from {} to {}", lastShoalPosition, currentPos);
-                            // If we've seen a stop and now it's moving, next stop will start the timer
+                            // Shoal started moving - this will trigger "waiting for stop" in overlay
                         }
                         lastShoalPosition = currentPos;
                         ticksAtSamePosition = 0;
@@ -272,11 +302,49 @@ public class NetDepthTimer extends Overlay
         if (button != null && !button.isHidden()) {
             Rectangle bounds = button.getBounds();
             if (bounds.width > 0 && bounds.height > 0) {
-                graphics.setColor(color);
-                graphics.setStroke(new BasicStroke(3));
-                graphics.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                // Check if button is actually visible in the viewport (not scrolled out of view)
+                if (isWidgetInViewport(button, parent)) {
+                    graphics.setColor(color);
+                    graphics.setStroke(new BasicStroke(3));
+                    graphics.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                }
             }
         }
+    }
+
+    private boolean isWidgetInViewport(Widget widget, Widget scrollContainer) {
+        if (widget == null || scrollContainer == null) {
+            return false;
+        }
+        
+        Rectangle widgetBounds = widget.getBounds();
+        
+        // Find the actual scroll viewport by looking for the parent with scroll properties
+        Widget scrollViewport = scrollContainer;
+        while (scrollViewport != null && scrollViewport.getScrollHeight() == 0) {
+            scrollViewport = scrollViewport.getParent();
+        }
+        
+        if (scrollViewport == null) {
+            // No scroll container found, use the original container
+            Rectangle containerBounds = scrollContainer.getBounds();
+            return containerBounds.contains(widgetBounds);
+        }
+        
+        // Get the visible viewport bounds (accounting for scroll position)
+        Rectangle viewportBounds = scrollViewport.getBounds();
+        int scrollY = scrollViewport.getScrollY();
+        
+        // Adjust the viewport to account for scroll position
+        Rectangle visibleArea = new Rectangle(
+            viewportBounds.x,
+            viewportBounds.y,
+            viewportBounds.width,
+            viewportBounds.height
+        );
+        
+        // Check if the widget is fully visible within the scrolled viewport
+        return visibleArea.contains(widgetBounds);
     }
 
     private NetDepth getNetDepth(Widget parent, int widgetIndex) {
@@ -338,19 +406,12 @@ public class NetDepthTimer extends Overlay
      */
     public static class TimerInfo {
         private final boolean active;
-        private final String currentDepth;
-        private final String nextDepth;
-        private final int currentTick;
-        private final int totalDuration;
+        private final boolean waiting;
         private final int ticksUntilDepthChange;
 
-        public TimerInfo(boolean active, String currentDepth, String nextDepth, 
-                        int currentTick, int totalDuration, int ticksUntilDepthChange) {
+        public TimerInfo(boolean active, boolean waiting, int ticksUntilDepthChange) {
             this.active = active;
-            this.currentDepth = currentDepth;
-            this.nextDepth = nextDepth;
-            this.currentTick = currentTick;
-            this.totalDuration = totalDuration;
+            this.waiting = waiting;
             this.ticksUntilDepthChange = ticksUntilDepthChange;
         }
 
@@ -358,20 +419,8 @@ public class NetDepthTimer extends Overlay
             return active;
         }
 
-        public String getCurrentDepth() {
-            return currentDepth;
-        }
-
-        public String getNextDepth() {
-            return nextDepth;
-        }
-
-        public int getCurrentTick() {
-            return currentTick;
-        }
-
-        public int getTotalDuration() {
-            return totalDuration;
+        public boolean isWaiting() {
+            return waiting;
         }
 
         public int getTicksUntilDepthChange() {
@@ -427,6 +476,19 @@ public class NetDepthTimer extends Overlay
                 NetDepth requiredDepth = getCurrentRequiredDepth();
                 log.debug("Shoal {} at tick {}: required depth = {}", objectId, ticksAtWaypoint, requiredDepth);
             }
+            
+            // Check if we've reached the depth change point - deactivate timer after first depth change
+            ShoalTiming timing = SHOAL_TIMINGS.get(objectId);
+            if (timing != null) {
+                int depthChangeTime = timing.getDepthChangeTime();
+                int actualChangeTime = depthChangeTime + GRACE_PERIOD_TICKS;
+                
+                if (ticksAtWaypoint >= actualChangeTime) {
+                    // Depth change has occurred, deactivate timer until shoal moves and stops again
+                    timerActive = false;
+                    log.debug("Shoal {} depth change occurred at tick {}, timer deactivated", objectId, ticksAtWaypoint);
+                }
+            }
         }
 
         NetDepth getCurrentRequiredDepth() {
@@ -454,37 +516,24 @@ public class NetDepthTimer extends Overlay
         TimerInfo getTimerInfo() {
             ShoalTiming timing = SHOAL_TIMINGS.get(objectId);
             if (timing == null) {
-                return new TimerInfo(false, "UNKNOWN", "UNKNOWN", 0, 0, 0);
+                return new TimerInfo(false, false, 0);
             }
 
+            // Check if shoal is currently moving (not stopped)
+            boolean shoalIsMoving = ticksAtSamePosition < STOPPED_THRESHOLD_TICKS;
+            
             if (!timerActive) {
-                return new TimerInfo(false, "CALIBRATING", "CALIBRATING", 0, timing.totalDuration, 0);
+                // Waiting for shoal to stop (either first time or after moving again)
+                return new TimerInfo(false, shoalIsMoving, 0);
             }
 
             int depthChangeTime = timing.getDepthChangeTime();
             int actualChangeTime = depthChangeTime + GRACE_PERIOD_TICKS;
             
-            NetDepth currentDepth = getCurrentRequiredDepth();
-            NetDepth nextDepth = (ticksAtWaypoint < actualChangeTime) ? timing.endDepth : timing.startDepth;
-            
-            // Calculate ticks until change (accounting for grace period)
-            int ticksUntilChange;
-            if (ticksAtWaypoint < actualChangeTime) {
-                // Before depth change
-                ticksUntilChange = actualChangeTime - ticksAtWaypoint;
-            } else {
-                // After depth change, until shoal moves
-                ticksUntilChange = timing.totalDuration - ticksAtWaypoint;
-            }
+            // Only show timer until first depth change
+            int ticksUntilChange = actualChangeTime - ticksAtWaypoint;
 
-            return new TimerInfo(
-                    true,
-                    currentDepth != null ? currentDepth.toString() : "UNKNOWN",
-                    nextDepth.toString(),
-                    ticksAtWaypoint,
-                    timing.totalDuration,
-                    ticksUntilChange
-            );
+            return new TimerInfo(true, false, ticksUntilChange);
         }
     }
 }

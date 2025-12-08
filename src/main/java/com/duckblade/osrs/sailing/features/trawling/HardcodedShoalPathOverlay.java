@@ -23,6 +23,15 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 	@Nonnull
 	private final Client client;
 	private final SailingConfig config;
+	
+	// Stop point indices for HALIBUT_PORT_ROBERTS (9 stop points)
+	private static final int[] PORT_ROBERTS_STOP_INDICES = {0, 45, 79, 139, 168, 214, 258, 306, 337};
+	
+	// Stop point indices for HALIBUT_SOUTHERN_EXPANSE (10 stop points)
+	private static final int[] SOUTHERN_EXPANSE_STOP_INDICES = {0, 15, 60, 97, 132, 185, 273, 343, 369, 419};
+	
+	// Color for stop point overlays (FF06B4FA = semi-transparent cyan)
+	private static final Color STOP_POINT_COLOR = new Color(0x06, 0xB4, 0xFA, 0xFF);
 
 	@Inject
 	public HardcodedShoalPathOverlay(@Nonnull Client client, SailingConfig config) {
@@ -58,13 +67,14 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 		Color pathColor = config.trawlingHardcodedShoalPathColour();
 		
 		// Only render paths if player is in the same region as the path
-		if (isInPathRegion(playerLocation, ShoalPaths.HALIBUT_PORT_ROBERTS)) {
-			renderPath(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, pathColor, "Halibut - Port Roberts");
-		}
-		if (isInPathRegion(playerLocation, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE)) {
-			renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor, "Halibut - Southern Expanse");
-		}
-		
+		// if (isInPathRegion(playerLocation, ShoalPaths.HALIBUT_PORT_ROBERTS)) {
+			
+		// }
+		// if (isInPathRegion(playerLocation, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE)) {
+		// 	renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor, "Halibut - Southern Expanse");
+		// }
+		renderPath(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, pathColor, "Halibut - Port Roberts");
+		renderStopPoints(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, PORT_ROBERTS_STOP_INDICES);
 		return null;
 	}
 
@@ -129,10 +139,6 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 				);
 			}
 
-			// Draw small waypoint marker
-			graphics.setColor(pathColor);
-			graphics.fillOval(canvasPoint.getX() - 2, canvasPoint.getY() - 2, 4, 4);
-
 			previousCanvasPoint = canvasPoint;
 		}
 
@@ -164,11 +170,65 @@ public class HardcodedShoalPathOverlay extends Overlay implements PluginLifecycl
 			}
 		}
 
-		// Draw label near first visible point
-		if (firstVisiblePoint != null && label != null) {
-			graphics.setColor(Color.WHITE);
-			graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 14f));
-			graphics.drawString(label, firstVisiblePoint.getX() + 10, firstVisiblePoint.getY() - 10);
+
+	}
+
+	private void renderStopPoints(Graphics2D graphics, WorldPoint[] path, int[] stopIndices) {
+		if (path == null || stopIndices == null) {
+			return;
 		}
+
+		for (int index : stopIndices) {
+			if (index >= path.length) {
+				continue;
+			}
+
+			WorldPoint stopPoint = path[index];
+			renderStopPointArea(graphics, stopPoint);
+		}
+	}
+
+	private void renderStopPointArea(Graphics2D graphics, WorldPoint centerPoint) {
+		// Draw a 10x10 tile border centered on the stop point
+		int halfSize = 5; // 5 tiles in each direction from center
+		
+		// Get the four corner points of the 10x10 area
+		WorldPoint topLeft = new WorldPoint(centerPoint.getX() - halfSize, centerPoint.getY() + halfSize, centerPoint.getPlane());
+		WorldPoint topRight = new WorldPoint(centerPoint.getX() + halfSize + 1, centerPoint.getY() + halfSize, centerPoint.getPlane());
+		WorldPoint bottomLeft = new WorldPoint(centerPoint.getX() - halfSize, centerPoint.getY() - halfSize - 1, centerPoint.getPlane());
+		WorldPoint bottomRight = new WorldPoint(centerPoint.getX() + halfSize + 1, centerPoint.getY() - halfSize - 1, centerPoint.getPlane());
+		
+		// Convert to local points
+		LocalPoint localTL = LocalPoint.fromWorld(client, topLeft);
+		LocalPoint localTR = LocalPoint.fromWorld(client, topRight);
+		LocalPoint localBL = LocalPoint.fromWorld(client, bottomLeft);
+		LocalPoint localBR = LocalPoint.fromWorld(client, bottomRight);
+		
+		if (localTL == null || localTR == null || localBL == null || localBR == null) {
+			return;
+		}
+		
+		// Convert to canvas points
+		net.runelite.api.Point canvasTL = Perspective.localToCanvas(client, localTL, centerPoint.getPlane());
+		net.runelite.api.Point canvasTR = Perspective.localToCanvas(client, localTR, centerPoint.getPlane());
+		net.runelite.api.Point canvasBL = Perspective.localToCanvas(client, localBL, centerPoint.getPlane());
+		net.runelite.api.Point canvasBR = Perspective.localToCanvas(client, localBR, centerPoint.getPlane());
+		
+		if (canvasTL == null || canvasTR == null || canvasBL == null || canvasBR == null) {
+			return;
+		}
+		
+		// Draw the border as four lines connecting the corners
+		graphics.setColor(STOP_POINT_COLOR);
+		graphics.setStroke(new BasicStroke(3));
+		
+		// Top line
+		graphics.drawLine(canvasTL.getX(), canvasTL.getY(), canvasTR.getX(), canvasTR.getY());
+		// Right line
+		graphics.drawLine(canvasTR.getX(), canvasTR.getY(), canvasBR.getX(), canvasBR.getY());
+		// Bottom line
+		graphics.drawLine(canvasBR.getX(), canvasBR.getY(), canvasBL.getX(), canvasBL.getY());
+		// Left line
+		graphics.drawLine(canvasBL.getX(), canvasBL.getY(), canvasTL.getX(), canvasTL.getY());
 	}
 }

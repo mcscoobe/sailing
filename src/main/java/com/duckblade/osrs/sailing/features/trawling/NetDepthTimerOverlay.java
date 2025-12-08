@@ -57,56 +57,27 @@ public class NetDepthTimerOverlay extends OverlayPanel
                 .build());
 
         if (!timerInfo.isActive()) {
-            // Show calibration message
+            // Show waiting or calibrating message
+            String message = timerInfo.isWaiting() ? "Waiting for shoal to stop" : "Calibrating...";
+            Color color = timerInfo.isWaiting() ? Color.ORANGE : Color.YELLOW;
+            
             panelComponent.getChildren().add(LineComponent.builder()
-                    .left("Status:")
-                    .right("Calibrating...")
-                    .rightColor(Color.YELLOW)
+                    .left(message)
+                    .leftColor(color)
                     .build());
             return super.render(graphics);
         }
 
-        // Show current depth requirement
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Required Depth:")
-                .right(timerInfo.getCurrentDepth().toString())
-                .rightColor(getDepthColor(timerInfo.getCurrentDepth()))
-                .build());
-
         // Show ticks until depth change
         int ticksUntilChange = timerInfo.getTicksUntilDepthChange();
+        Color tickColor = ticksUntilChange <= 5 ? Color.RED : Color.WHITE;
+        
         panelComponent.getChildren().add(LineComponent.builder()
-                .left("Ticks Until Change:")
+                .left("Ticks until change:")
                 .right(String.valueOf(ticksUntilChange))
-                .rightColor(ticksUntilChange <= 5 ? Color.RED : Color.WHITE)
-                .build());
-
-        // Show next depth
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Next Depth:")
-                .right(timerInfo.getNextDepth().toString())
-                .rightColor(getDepthColor(timerInfo.getNextDepth()))
-                .build());
-
-        // Show total ticks at waypoint
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Waypoint Tick:")
-                .right(timerInfo.getCurrentTick() + " / " + timerInfo.getTotalDuration())
+                .rightColor(tickColor)
                 .build());
 
         return super.render(graphics);
-    }
-
-    private Color getDepthColor(String depth) {
-        switch (depth.toUpperCase()) {
-            case "SHALLOW":
-                return new Color(135, 206, 250); // Light blue
-            case "MODERATE":
-                return new Color(255, 215, 0); // Gold
-            case "DEEP":
-                return new Color(0, 0, 139); // Dark blue
-            default:
-                return Color.WHITE;
-        }
     }
 }

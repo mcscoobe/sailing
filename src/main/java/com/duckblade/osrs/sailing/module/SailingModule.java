@@ -147,6 +147,7 @@ public class SailingModule extends AbstractModule
 			.add(mysteriousGlow)
 			.add(netCapacityOverlay)
 			.add(netCapacityTracker)
+			.add(netDepthTimer)
 			.add(netDepthTimerOverlay)
 			.add(navigationOverlay)
 			.add(oceanMan)
