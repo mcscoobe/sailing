@@ -140,12 +140,23 @@ public class ShoalOverlay extends Overlay
     private void renderShoalHighlight(Graphics2D graphics, GameObject shoal) {
         Polygon poly = Perspective.getCanvasTileAreaPoly(client, shoal.getLocalLocation(), SHOAL_HIGHLIGHT_SIZE);
         if (poly != null) {
-            Color color = config.trawlingShoalHighlightColour();
+            Color color = getShoalColor(shoal.getId());
             Stroke originalStroke = graphics.getStroke();
             graphics.setStroke(new BasicStroke(0.5f));
             OverlayUtil.renderPolygon(graphics, poly, color);
             graphics.setStroke(originalStroke);
         }
+    }
+
+    private Color getShoalColor(int objectId) {
+        // Special shoals (Vibrant, Glistening, Shimmering) are green
+        if (objectId == TrawlingData.ShoalObjectID.VIBRANT ||
+            objectId == TrawlingData.ShoalObjectID.GLISTENING ||
+            objectId == TrawlingData.ShoalObjectID.SHIMMERING) {
+            return Color.GREEN;
+        }
+        // Default color from config
+        return config.trawlingShoalHighlightColour();
     }
 
 }
