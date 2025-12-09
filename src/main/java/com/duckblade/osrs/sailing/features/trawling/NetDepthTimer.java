@@ -42,14 +42,14 @@ public class NetDepthTimer extends Overlay
     private static final Map<Integer, ShoalTiming> SHOAL_TIMINGS = new HashMap<>();
     
     static {
-        SHOAL_TIMINGS.put(ShoalData.ShoalObjectID.MARLIN, 
-            new ShoalTiming(ShoalData.ShoalStopDuration.MARLIN, NetDepth.MODERATE, NetDepth.DEEP));
-        SHOAL_TIMINGS.put(ShoalData.ShoalObjectID.BLUEFIN, 
-            new ShoalTiming(ShoalData.ShoalStopDuration.BLUEFIN, NetDepth.SHALLOW, NetDepth.MODERATE));
-        SHOAL_TIMINGS.put(ShoalData.ShoalObjectID.HALIBUT, 
-            new ShoalTiming(ShoalData.ShoalStopDuration.HALIBUT, NetDepth.SHALLOW, NetDepth.MODERATE));
-        SHOAL_TIMINGS.put(ShoalData.ShoalObjectID.YELLOWFIN, 
-            new ShoalTiming(ShoalData.ShoalStopDuration.YELLOWFIN, NetDepth.SHALLOW, NetDepth.MODERATE));
+        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.MARLIN,
+            new ShoalTiming(TrawlingData.ShoalStopDuration.MARLIN, NetDepth.MODERATE, NetDepth.DEEP));
+        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.BLUEFIN,
+            new ShoalTiming(TrawlingData.ShoalStopDuration.BLUEFIN, NetDepth.SHALLOW, NetDepth.MODERATE));
+        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.HALIBUT,
+            new ShoalTiming(TrawlingData.ShoalStopDuration.HALIBUT, NetDepth.SHALLOW, NetDepth.MODERATE));
+        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.YELLOWFIN,
+            new ShoalTiming(TrawlingData.ShoalStopDuration.YELLOWFIN, NetDepth.SHALLOW, NetDepth.MODERATE));
     }
 
     // Widget indices for fishing net controls

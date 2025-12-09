@@ -13,7 +13,6 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 
 import net.runelite.api.events.WorldViewUnloaded;
-import net.runelite.api.gameval.ObjectID;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -36,15 +35,15 @@ public class ShoalOverlay extends Overlay
 
     // Clickbox IDs
     private static final Set<Integer> SHOAL_CLICKBOX_IDS = ImmutableSet.of(
-            ShoalData.ShoalObjectID.BLUEFIN,
-            ShoalData.ShoalObjectID.GIANT_KRILL,
-            ShoalData.ShoalObjectID.GLISTENING,
-            ShoalData.ShoalObjectID.HADDOCK,
-            ShoalData.ShoalObjectID.HALIBUT,
-            ShoalData.ShoalObjectID.MARLIN,
-            ShoalData.ShoalObjectID.SHIMMERING,
-            ShoalData.ShoalObjectID.VIBRANT,
-            ShoalData.ShoalObjectID.YELLOWFIN);
+            TrawlingData.ShoalObjectID.BLUEFIN,
+            TrawlingData.ShoalObjectID.GIANT_KRILL,
+            TrawlingData.ShoalObjectID.GLISTENING,
+            TrawlingData.ShoalObjectID.HADDOCK,
+            TrawlingData.ShoalObjectID.HALIBUT,
+            TrawlingData.ShoalObjectID.MARLIN,
+            TrawlingData.ShoalObjectID.SHIMMERING,
+            TrawlingData.ShoalObjectID.VIBRANT,
+            TrawlingData.ShoalObjectID.YELLOWFIN);
 
     @Nonnull
     private final Client client;

@@ -2,11 +2,8 @@ package com.duckblade.osrs.sailing.features.trawling;
 
 import net.runelite.api.gameval.ObjectID;
 
-public class ShoalData {
+public class TrawlingData {
 
-    /**
-     * Shoal clickbox object IDs
-     */
     public static class ShoalObjectID {
         protected static final int GIANT_KRILL = ObjectID.SAILING_SHOAL_CLICKBOX_GIANT_KRILL;
         protected static final int HADDOCK = ObjectID.SAILING_SHOAL_CLICKBOX_HADDOCK;
@@ -25,5 +22,13 @@ public class ShoalData {
         protected static final int HALIBUT = 80;
         protected static final int BLUEFIN = 66;
         protected static final int MARLIN = 50;
+    }
+
+    public static class FishingAreas {
+        protected static final ShoalFishingArea PORT_ROBERTS = new ShoalFishingArea(1822, 2050, 3129, 3414);
+        protected static final ShoalFishingArea SOUTHERN_EXPANSE = new ShoalFishingArea(1870, 2180, 2171, 2512);
+        protected static final ShoalFishingArea RAINBOW_REEF = new ShoalFishingArea(2075, 2406, 2179, 2450);
+        protected static final ShoalFishingArea BUCCANEERS_HAVEN = new ShoalFishingArea(1984, 2268, 3594, 3771);
+        protected static final ShoalFishingArea WEISSMERE = new ShoalFishingArea(2590, 2870, 3945, 4146);
     }
 }

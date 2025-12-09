@@ -26,11 +26,7 @@ public class ShoalPathOverlay extends Overlay implements PluginLifecycleComponen
 	private final SailingConfig config;
 	
 	// ya the numbers are magic, figure it out
-	private static final ShoalFishingArea PORT_ROBERTS = new ShoalFishingArea(1822, 2050, 3129, 3414);
-	private static final ShoalFishingArea SOUTHERN_EXPANSE = new ShoalFishingArea(1870, 2180, 2171, 2512);
-	private static final ShoalFishingArea RAINBOW_REEF = new ShoalFishingArea(2075, 2406, 2179, 2450);
-	private static final ShoalFishingArea BUCCANEERS_HAVEN = new ShoalFishingArea(1984, 2268, 3594, 3771);
-	private static final ShoalFishingArea WEISSMERE = new ShoalFishingArea(2590, 2870, 3945, 4146);
+
 
 	// Stop points that mark fishing spots on a given route
 	private static final int[] PORT_ROBERTS_STOP_INDICES = {0, 45, 79, 139, 168, 214, 258, 306, 337};
@@ -78,27 +74,27 @@ public class ShoalPathOverlay extends Overlay implements PluginLifecycleComponen
 
         Color pathColor = config.trawlingShoalPathColour();
 
-		if (PORT_ROBERTS.contains(playerLocation)) {
+		if (TrawlingData.FishingAreas.PORT_ROBERTS.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, pathColor);
 			renderStopPoints(graphics, ShoalPaths.HALIBUT_PORT_ROBERTS, PORT_ROBERTS_STOP_INDICES);
 		}
 
-		else if (SOUTHERN_EXPANSE.contains(playerLocation)) {
+		else if (TrawlingData.FishingAreas.SOUTHERN_EXPANSE.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, pathColor);
 			renderStopPoints(graphics, ShoalPaths.HALIBUT_SOUTHERN_EXPANSE, SOUTHERN_EXPANSE_STOP_INDICES);
 		}
 
-		else if (RAINBOW_REEF.contains(playerLocation)) {
+		else if (TrawlingData.FishingAreas.RAINBOW_REEF.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.BLUEFIN_RAINBOW_REEF, pathColor);
 			renderStopPoints(graphics, ShoalPaths.BLUEFIN_RAINBOW_REEF, RAINBOW_REEF_STOP_INDICES);
 		}
 
-		else if (BUCCANEERS_HAVEN.contains(playerLocation)) {
+		else if (TrawlingData.FishingAreas.BUCCANEERS_HAVEN.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.BLUEFIN_BUCCANEERS_HAVEN, pathColor);
 			renderStopPoints(graphics, ShoalPaths.BLUEFIN_BUCCANEERS_HAVEN, BUCCANEERS_HAVEN_STOP_INDICES);
 		}
 
-		else if (WEISSMERE.contains(playerLocation)) {
+		else if (TrawlingData.FishingAreas.WEISSMERE.contains(playerLocation)) {
 			renderPath(graphics, ShoalPaths.MARLIN_WEISSMERE, pathColor);
 			renderStopPoints(graphics, ShoalPaths.MARLIN_WEISSMERE, WEISSMERE_STOP_INDICES);
 		}
