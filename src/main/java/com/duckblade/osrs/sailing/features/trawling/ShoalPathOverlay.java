@@ -71,6 +71,7 @@ public class ShoalPathOverlay extends Overlay implements PluginLifecycleComponen
 		
 		// Get top-level world coordinates (actual world position, not boat instance position)
 		WorldPoint playerLocation = SailingUtil.getTopLevelWorldPoint(client);
+		log.debug("ShoalPathOverlay rendering at player location: {}", playerLocation);
 
         Color pathColor = config.trawlingShoalPathColour();
 

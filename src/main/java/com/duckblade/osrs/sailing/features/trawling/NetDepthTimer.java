@@ -4,18 +4,18 @@ import com.duckblade.osrs.sailing.SailingConfig;
 import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
-import lombok.Getter;
+import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.WorldEntity;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.WorldEntitySpawned;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.overlay.Overlay;
@@ -27,6 +27,7 @@ import javax.inject.Singleton;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Singleton
@@ -39,20 +40,39 @@ public class NetDepthTimer extends Overlay
     // Number of ticks at same position to consider shoal "stopped"
     private static final int STOPPED_THRESHOLD_TICKS = 2;
     
-    // Shoal timing data (in ticks)
-    private static final Map<Integer, ShoalTiming> SHOAL_TIMINGS = new HashMap<>();
+    // Shoal object IDs - used to detect any shoal presence
+    private static final Set<Integer> SHOAL_OBJECT_IDS = ImmutableSet.of(
+        TrawlingData.ShoalObjectID.MARLIN,
+        TrawlingData.ShoalObjectID.BLUEFIN,
+        TrawlingData.ShoalObjectID.VIBRANT,
+        TrawlingData.ShoalObjectID.HALIBUT,
+        TrawlingData.ShoalObjectID.GLISTENING,
+        TrawlingData.ShoalObjectID.YELLOWFIN
+    );
+
+
+    
+    // Depth transitions based on stop duration
+    private static final Map<Integer, ShoalTiming> DURATION_TO_TIMING = new HashMap<>();
     
     static {
-        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.MARLIN,
+        // Marlin areas: 50 ticks, Moderate -> Deep
+        DURATION_TO_TIMING.put(TrawlingData.ShoalStopDuration.MARLIN, 
             new ShoalTiming(TrawlingData.ShoalStopDuration.MARLIN, NetDepth.MODERATE, NetDepth.DEEP));
-        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.BLUEFIN,
+        
+        // Bluefin areas: 66 ticks, Shallow -> Moderate
+        DURATION_TO_TIMING.put(TrawlingData.ShoalStopDuration.BLUEFIN, 
             new ShoalTiming(TrawlingData.ShoalStopDuration.BLUEFIN, NetDepth.SHALLOW, NetDepth.MODERATE));
-        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.HALIBUT,
+        
+        // Halibut areas: 80 ticks, Shallow -> Moderate
+        DURATION_TO_TIMING.put(TrawlingData.ShoalStopDuration.HALIBUT, 
             new ShoalTiming(TrawlingData.ShoalStopDuration.HALIBUT, NetDepth.SHALLOW, NetDepth.MODERATE));
-        SHOAL_TIMINGS.put(TrawlingData.ShoalObjectID.YELLOWFIN,
+        
+        // Yellowfin areas: 100 ticks, Shallow -> Moderate
+        DURATION_TO_TIMING.put(TrawlingData.ShoalStopDuration.YELLOWFIN, 
             new ShoalTiming(TrawlingData.ShoalStopDuration.YELLOWFIN, NetDepth.SHALLOW, NetDepth.MODERATE));
     }
-
+    
     // Widget indices for fishing net controls
     private static final int STARBOARD_DOWN = 97;
     private static final int STARBOARD_UP = 108;
@@ -64,9 +84,9 @@ public class NetDepthTimer extends Overlay
     private static final int PORT_DEPTH_WIDGET_INDEX = 131;
     
     // Sprite IDs for each depth level
-    private static final int SPRITE_SHALLOW = SpriteID.IconSailingFacilities24x24._13;
-    private static final int SPRITE_MODERATE = SpriteID.IconSailingFacilities24x24._14;
-    private static final int SPRITE_DEEP = SpriteID.IconSailingFacilities24x24._15;
+    private static final int SPRITE_SHALLOW = 7081;
+    private static final int SPRITE_MODERATE = 7082;
+    private static final int SPRITE_DEEP = 7083;
 
     private final Client client;
     private final SailingConfig config;
@@ -76,10 +96,12 @@ public class NetDepthTimer extends Overlay
     private WorldEntity movingShoal = null;
     private WorldPoint lastShoalPosition = null;
     private int ticksAtSamePosition = 0;
-    private int ticksMoving = 0; // Track how many ticks the shoal has been moving
+    private boolean hasSeenShoalStop = false;
     
     // Track the active shoal timer
     private ShoalTracker activeTracker = null;
+    
+
 
     @Inject
     public NetDepthTimer(Client client, SailingConfig config, BoatTracker boatTracker) {
@@ -107,7 +129,7 @@ public class NetDepthTimer extends Overlay
         movingShoal = null;
         lastShoalPosition = null;
         ticksAtSamePosition = 0;
-        ticksMoving = 0;
+        hasSeenShoalStop = false;
         activeTracker = null;
     }
 
@@ -119,14 +141,15 @@ public class NetDepthTimer extends Overlay
         if (activeTracker == null) {
             return null;
         }
-        return activeTracker.getTimerInfo();
+        TimerInfo info = activeTracker.getTimerInfo();
+        return info;
     }
 
     @Subscribe
     public void onWorldEntitySpawned(WorldEntitySpawned e) {
         WorldEntity entity = e.getWorldEntity();
         
-        // Log all WorldEntity spawns to debug
+        // Log all WorldEntity spawns
         if (entity.getConfig() != null) {
             log.debug("WorldEntity spawned - Config ID: {}", entity.getConfig().getId());
         }
@@ -136,7 +159,26 @@ public class NetDepthTimer extends Overlay
             movingShoal = entity;
             lastShoalPosition = null;
             ticksAtSamePosition = 0;
-            log.debug("Shoal WorldEntity spawned, tracking movement");
+            log.info("Shoal WorldEntity spawned, tracking movement");
+            
+            // Create tracker if we don't have one yet, using WorldEntity's position
+            if (activeTracker == null) {
+                LocalPoint localPos = entity.getCameraFocus();
+                if (localPos != null) {
+                    WorldPoint worldPos = WorldPoint.fromLocal(client, localPos);
+                    int stopDuration = TrawlingData.FishingAreas.getStopDurationForLocation(worldPos);
+                    
+                    log.info("Shoal WorldEntity at location: {}, StopDuration: {}", worldPos, stopDuration);
+                    
+                    if (stopDuration > 0) {
+                        activeTracker = new ShoalTracker(stopDuration, worldPos);
+                        log.info("Created ShoalTracker at location {}: stop duration = {} ticks", 
+                                 worldPos, stopDuration);
+                    } else {
+                        log.warn("Shoal spawned at unknown location: {} (not in any defined fishing area)", worldPos);
+                    }
+                }
+            }
         }
     }
 
@@ -145,15 +187,9 @@ public class NetDepthTimer extends Overlay
         GameObject obj = e.getGameObject();
         int objectId = obj.getId();
         
-        log.debug("GameObject spawned: ID={}, isShoal={}", objectId, SHOAL_TIMINGS.containsKey(objectId));
-        
-        if (SHOAL_TIMINGS.containsKey(objectId)) {
-            // Store the shoal type when we first see it
-            if (activeTracker == null || activeTracker.objectId != objectId) {
-                activeTracker = new ShoalTracker(objectId);
-                log.debug("Tracking shoal type: ID={}, movingShoal={}, activeTracker created", 
-                         objectId, movingShoal != null);
-            }
+        if (SHOAL_OBJECT_IDS.contains(objectId)) {
+            log.debug("Shoal GameObject detected (ID={}), waiting for WorldEntity to get proper coordinates", objectId);
+            // Don't create tracker yet - wait for WorldEntity spawn to get proper top-level coordinates
         }
     }
 
@@ -162,14 +198,14 @@ public class NetDepthTimer extends Overlay
         GameObject obj = e.getGameObject();
         int objectId = obj.getId();
         
-        if (SHOAL_TIMINGS.containsKey(objectId)) {
+        if (SHOAL_OBJECT_IDS.contains(objectId)) {
             // Shoal left world view - reset everything
             log.debug("Shoal despawned (left world view): ID={}", objectId);
             activeTracker = null;
             movingShoal = null;
             lastShoalPosition = null;
             ticksAtSamePosition = 0;
-            ticksMoving = 0;
+            hasSeenShoalStop = false;
         }
     }
 
@@ -177,7 +213,6 @@ public class NetDepthTimer extends Overlay
     public void onGameTick(GameTick e) {
         // If we don't have a moving shoal but have an active tracker, try to find it
         if (movingShoal == null && activeTracker != null) {
-            // Try to find the WorldEntity in the scene
             if (client.getTopLevelWorldView() != null) {
                 for (WorldEntity entity : client.getTopLevelWorldView().worldEntities()) {
                     if (entity.getConfig() != null && entity.getConfig().getId() == SHOAL_WORLD_ENTITY_CONFIG_ID) {
@@ -196,27 +231,27 @@ public class NetDepthTimer extends Overlay
             net.runelite.api.coords.LocalPoint localPos = movingShoal.getCameraFocus();
             if (localPos != null) {
                 WorldPoint currentPos = WorldPoint.fromLocal(client, localPos);
-                if (currentPos.equals(lastShoalPosition)) {
-                    // Shoal is at same position
-                    ticksAtSamePosition++;
-                    
-                    // Check if shoal just stopped after moving for at least 5 ticks
-                    if (ticksAtSamePosition == STOPPED_THRESHOLD_TICKS && ticksMoving >= 5) {
-                        // Shoal stopped after moving - start/restart timer
-                        activeTracker.restart();
-                        log.debug("Shoal stopped at {} after moving for {} ticks, timer started", currentPos, ticksMoving);
-                        ticksMoving = 0; // Reset movement counter
-                    }
-                } else {
-                    // Shoal is moving
-                    if (lastShoalPosition != null) {
-                        ticksMoving++;
-                        if (ticksMoving == 1) {
-                            log.debug("Shoal started moving from {}", lastShoalPosition);
+                if (currentPos != null) {
+                    if (currentPos.equals(lastShoalPosition)) {
+                        ticksAtSamePosition++;
+                        log.debug("Shoal at same position: {} ticks", ticksAtSamePosition);
+                        
+                        if (ticksAtSamePosition == STOPPED_THRESHOLD_TICKS && !hasSeenShoalStop) {
+                            // First time seeing shoal stop
+                            hasSeenShoalStop = true;
+                            log.info("Shoal stopped at {} (first stop observed, waiting for movement)", currentPos);
+                        } else if (ticksAtSamePosition == STOPPED_THRESHOLD_TICKS && hasSeenShoalStop) {
+                            // Shoal stopped again after moving - restart timer
+                            activeTracker.restart();
+                            log.info("Shoal stopped at {}, timer restarted", currentPos);
                         }
+                    } else {
+                        if (lastShoalPosition != null) {
+                            log.info("Shoal moved from {} to {}", lastShoalPosition, currentPos);
+                        }
+                        lastShoalPosition = currentPos;
+                        ticksAtSamePosition = 0;
                     }
-                    lastShoalPosition = currentPos;
-                    ticksAtSamePosition = 0;
                 }
             }
         }
@@ -255,7 +290,7 @@ public class NetDepthTimer extends Overlay
     }
 
     private void highlightButtonsForDepth(Graphics2D graphics, Widget parent, NetDepth requiredDepth) {
-        Color highlightColor = Color.ORANGE;
+        Color highlightColor = config.trawlingShoalHighlightColour();
 
         // Check starboard net - only highlight if opacity is 0 (player can interact)
         Widget starboardDepthWidget = parent.getChild(STARBOARD_DEPTH_WIDGET_INDEX);
@@ -368,7 +403,7 @@ public class NetDepthTimer extends Overlay
         // Parent widgets have invalid bounds, get their children
         if (bounds.x == -1 && bounds.y == -1) {
             Widget[] children = parentWidget.getChildren();
-            if (children != null) {
+            if (children != null && children.length > 0) {
                 for (Widget child : children) {
                     if (child != null) {
                         Rectangle childBounds = child.getBounds();
@@ -395,7 +430,6 @@ public class NetDepthTimer extends Overlay
     /**
      * Data class for exposing timer information to overlay
      */
-    @Getter
     public static class TimerInfo {
         private final boolean active;
         private final boolean waiting;
@@ -407,6 +441,17 @@ public class NetDepthTimer extends Overlay
             this.ticksUntilDepthChange = ticksUntilDepthChange;
         }
 
+        public boolean isActive() {
+            return active;
+        }
+
+        public boolean isWaiting() {
+            return waiting;
+        }
+
+        public int getTicksUntilDepthChange() {
+            return ticksUntilDepthChange;
+        }
     }
 
     // Data class for shoal timing information
@@ -426,14 +471,16 @@ public class NetDepthTimer extends Overlay
         }
     }
 
-    // Tracker for shoal timer state
+    // Tracker for shoal timer state - now based on location instead of shoal type
     private class ShoalTracker {
-        final int objectId;
+        final int stopDuration;
+        final WorldPoint location;
         int ticksAtWaypoint;
         boolean timerActive;
 
-        ShoalTracker(int objectId) {
-            this.objectId = objectId;
+        ShoalTracker(int stopDuration, WorldPoint location) {
+            this.stopDuration = stopDuration;
+            this.location = location;
             this.ticksAtWaypoint = 0;
             this.timerActive = false; // Don't start timer until we've seen a complete cycle
         }
@@ -441,7 +488,8 @@ public class NetDepthTimer extends Overlay
         void restart() {
             this.ticksAtWaypoint = 0;
             this.timerActive = true; // Activate timer when restarting (after stop→move→stop)
-            log.debug("Shoal {} timer restarted and activated", objectId);
+            log.info("Shoal at {} timer restarted and activated (duration: {} ticks)", 
+                     location, stopDuration);
         }
 
         void tick() {
@@ -451,23 +499,24 @@ public class NetDepthTimer extends Overlay
             
             ticksAtWaypoint++;
             if (ticksAtWaypoint == 1) {
-                log.debug("Shoal {} timer TICK 1 - timer is now running", objectId);
+                log.debug("Shoal at {} timer TICK 1 - timer is now running", location);
             }
             if (ticksAtWaypoint % 10 == 0) {
                 NetDepth requiredDepth = getCurrentRequiredDepth();
-                log.debug("Shoal {} at tick {}: required depth = {}", objectId, ticksAtWaypoint, requiredDepth);
+                log.debug("Shoal at {} at tick {}: required depth = {}", 
+                         location, ticksAtWaypoint, requiredDepth);
             }
             
-            // Check if we've reached the depth change point (1/2 of total duration)
-            ShoalTiming timing = SHOAL_TIMINGS.get(objectId);
+            // Check if we've reached the depth change point - deactivate timer after first depth change
+            ShoalTiming timing = DURATION_TO_TIMING.get(stopDuration);
             if (timing != null) {
                 int depthChangeTime = timing.getDepthChangeTime();
                 
                 if (ticksAtWaypoint >= depthChangeTime) {
                     // Depth change has occurred, deactivate timer until shoal moves and stops again
                     timerActive = false;
-                    log.debug("Shoal {} depth change occurred at tick {} (1/2 of {}), timer deactivated", 
-                             objectId, ticksAtWaypoint, timing.totalDuration);
+                    log.debug("Shoal at {} depth change occurred at tick {}, timer deactivated", 
+                             location, ticksAtWaypoint);
                 }
             }
         }
@@ -477,24 +526,22 @@ public class NetDepthTimer extends Overlay
                 return null; // Don't provide depth until timer is active
             }
             
-            ShoalTiming timing = SHOAL_TIMINGS.get(objectId);
+            ShoalTiming timing = DURATION_TO_TIMING.get(stopDuration);
             if (timing == null) {
                 return null;
             }
 
             int depthChangeTime = timing.getDepthChangeTime();
             
-            // Before the depth change point, use start depth
             if (ticksAtWaypoint < depthChangeTime) {
                 return timing.startDepth;
             } else {
-                // After depth change, timer will be deactivated so this won't be called
                 return timing.endDepth;
             }
         }
 
         TimerInfo getTimerInfo() {
-            ShoalTiming timing = SHOAL_TIMINGS.get(objectId);
+            ShoalTiming timing = DURATION_TO_TIMING.get(stopDuration);
             if (timing == null) {
                 return new TimerInfo(false, false, 0);
             }
@@ -509,7 +556,7 @@ public class NetDepthTimer extends Overlay
 
             int depthChangeTime = timing.getDepthChangeTime();
             
-            // Show timer counting down to depth change (1/2 of total duration)
+            // Only show timer until first depth change
             int ticksUntilChange = depthChangeTime - ticksAtWaypoint;
 
             return new TimerInfo(true, false, ticksUntilChange);

@@ -7,17 +7,27 @@ public class ShoalFishingArea {
 	public final int east;
 	public final int south;
 	public final int north;
+	private final int stopDuration;
 
 	public ShoalFishingArea(int west, int east, int south, int north) {
+		this(west, east, south, north, -1);
+	}
+
+	public ShoalFishingArea(int west, int east, int south, int north, int stopDuration) {
 		this.west = west;
 		this.east = east;
 		this.south = south;
 		this.north = north;
+		this.stopDuration = stopDuration;
 	}
 
 	public boolean contains(WorldPoint point) {
 		int x = point.getX();
 		int y = point.getY();
 		return x >= west && x <= east && y >= south && y <= north;
+	}
+
+	public int getStopDuration() {
+		return stopDuration;
 	}
 }
