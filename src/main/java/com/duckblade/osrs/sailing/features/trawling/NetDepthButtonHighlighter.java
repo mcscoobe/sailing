@@ -135,10 +135,11 @@ public class NetDepthButtonHighlighter extends Overlay
                 // At deep or shallow in three-depth area, highlight moderate
                 return NetDepth.MODERATE;
             }
+            // For three-depth areas, if we reach here, something is wrong - don't highlight
+            return null;
         }
 
-        // For all other cases (two-depth areas or non-moderate depths), 
-        // return the current shoal depth
+        // For two-depth areas, return the current shoal depth
         return currentShoalDepth;
     }
 
