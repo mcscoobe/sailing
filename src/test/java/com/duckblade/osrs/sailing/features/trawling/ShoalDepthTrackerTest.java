@@ -39,24 +39,26 @@ public class ShoalDepthTrackerTest {
     @Mock
     private ChatMessage chatMessage;
     
+    @Mock
+    private NetDepthTracker netDepthTracker;
+    
     private ShoalDepthTracker tracker;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        tracker = new ShoalDepthTracker(client);
+        tracker = new ShoalDepthTracker(client, netDepthTracker);
     }
 
     /**
-     * **Feature: trawling-depth-tracking, Property 5: Shoal spawn initializes correct depth**
-     * **Validates: Requirements 2.1**
+     * **Feature: trawling-depth-tracking, Property 5: Shoal spawn activates tracking**
+     * **Validates: New chat message-based implementation**
      * 
-     * Property: For any fishing area, when a shoal spawns in that area, 
-     * the ShoalDepthTracker should initialize with the starting depth appropriate 
-     * for that area's depth pattern.
+     * Property: When a shoal spawns, the ShoalDepthTracker should activate tracking
+     * but not initialize any depth until confirmed via chat messages.
      */
     @Test
-    public void testShoalSpawnInitializesCorrectDepth() {
+    public void testShoalSpawnActivatesTracking() {
         // Test data: different fishing areas and their expected starting depths
         TestCase[] testCases = {
             // Marlin areas: start at MODERATE
@@ -99,13 +101,12 @@ public class ShoalDepthTrackerTest {
             // Simulate the initialization directly since we can't easily mock static methods
             simulateWorldEntitySpawn(location);
             
-            // Verify the property: correct depth initialization
-            assertEquals("Shoal at " + location + " should initialize with correct depth",
-                        testCase.expectedDepth, tracker.getCurrentDepth());
+            // Verify the property: no automatic depth initialization in new implementation
+            assertNull("Shoal depth should be null until confirmed via chat message",
+                      tracker.getCurrentDepth());
             
-            // Verify three-depth area flag
-            assertEquals("Shoal at " + location + " should have correct three-depth area flag",
-                        testCase.expectedThreeDepthArea, tracker.isThreeDepthArea());
+            // Verify shoal is active after spawn
+            assertTrue("Shoal should be active after spawn at " + location, tracker.isShoalActive());
             
             // Verify movement direction is reset
             assertEquals("Movement direction should be UNKNOWN on spawn",
@@ -152,8 +153,8 @@ public class ShoalDepthTrackerTest {
             // Verify the property: all state should be cleared
             assertNull("Current depth should be null after despawn for shoal ID " + shoalId,
                       tracker.getCurrentDepth());
-            assertFalse("Three-depth area flag should be false after despawn for shoal ID " + shoalId,
-                       tracker.isThreeDepthArea());
+            assertFalse("Shoal should be inactive after despawn for shoal ID " + shoalId,
+                       tracker.isShoalActive());
             assertEquals("Movement direction should be UNKNOWN after despawn for shoal ID " + shoalId,
                         MovementDirection.UNKNOWN, tracker.getNextMovementDirection());
         }
@@ -183,14 +184,19 @@ public class ShoalDepthTrackerTest {
                 WorldPoint testLocation = new WorldPoint(2075, 2179, 0); // Bluefin area
                 simulateWorldEntitySpawn(testLocation);
                 
-                // Verify initial state
-                assertNotNull("Tracker should have initial state", tracker.getCurrentDepth());
+                // Verify initial state - no depth until chat message confirms it
+                assertNull("Tracker should have no initial depth", tracker.getCurrentDepth());
                 
-                // Simulate a depth change notification (this is how NetDepthTimer communicates transitions)
-                tracker.notifyDepthChange(endDepth);
+                // Simulate a "correct depth" chat message to set the depth
+                when(chatMessage.getType()).thenReturn(ChatMessageType.GAMEMESSAGE);
+                when(chatMessage.getMessage()).thenReturn("correct depth for the nearby");
+                when(netDepthTracker.getPortNetDepth()).thenReturn(endDepth);
+                when(netDepthTracker.getStarboardNetDepth()).thenReturn(endDepth);
+                
+                tracker.onChatMessage(chatMessage);
                 
                 // Verify the property: depth state should be updated
-                assertEquals("Depth should be updated to new depth after transition from " + startDepth + " to " + endDepth,
+                assertEquals("Depth should be updated to new depth after 'correct depth' message",
                             endDepth, tracker.getCurrentDepth());
                 
                 // Reset for next iteration
@@ -218,19 +224,17 @@ public class ShoalDepthTrackerTest {
                 WorldPoint testLocation = new WorldPoint(2075, 2179, 0); // Bluefin area (three-depth)
                 simulateWorldEntitySpawn(testLocation);
                 
-                // Simulate setting a movement direction (this would normally happen via chat message parsing)
-                // We'll use reflection or a test helper to set this state
-                setMovementDirectionForTesting(initialDirection);
+                // Movement direction is no longer tracked in the new implementation
+                // This functionality has been removed
                 
                 // Verify movement direction is set
                 assertEquals("Movement direction should be set before transition",
                             initialDirection, tracker.getNextMovementDirection());
                 
-                // Simulate a depth transition
-                tracker.notifyDepthChange(transitionDepth);
-                
-                // Verify the property: movement direction should be cleared
-                assertEquals("Movement direction should be UNKNOWN after depth transition with initial direction " + initialDirection,
+                // The new ShoalDepthTracker no longer tracks movement direction
+                // This test is no longer applicable since movement direction is deprecated
+                // Verify that the deprecated method returns UNKNOWN
+                assertEquals("Movement direction should always be UNKNOWN in new implementation",
                             MovementDirection.UNKNOWN, tracker.getNextMovementDirection());
                 
                 // Reset for next iteration
@@ -240,14 +244,14 @@ public class ShoalDepthTrackerTest {
     }
 
     /**
-     * **Feature: trawling-depth-tracking, Property 11: Chat message sets movement direction for deep**
-     * **Validates: Requirements 4.1**
+     * **Feature: trawling-depth-tracking, Property 11: Movement direction no longer tracked**
+     * **Validates: New chat message-based implementation**
      * 
-     * Property: For any chat message containing text indicating the shoal moved deeper,
-     * the ShoalDepthTracker should record the next depth transition as moderate-to-deep.
+     * Property: The new ShoalDepthTracker no longer tracks movement direction from chat messages.
+     * Movement direction is always UNKNOWN in the new implementation.
      */
     @Test
-    public void testChatMessageSetsMovementDirectionForDeep() {
+    public void testMovementDirectionNoLongerTracked() {
         // Test various messages that should indicate "deeper" movement
         String[] deeperMessages = {
             "The shoal moves deeper into the water",
@@ -264,23 +268,16 @@ public class ShoalDepthTrackerTest {
             WorldPoint bluefinLocation = new WorldPoint(2200, 2300, 0); // Bluefin area
             simulateWorldEntitySpawn(bluefinLocation);
             
-            // Verify we're in a three-depth area
-            assertTrue("Should be in three-depth area for test", tracker.isThreeDepthArea());
+            // Verify shoal is active
+            assertTrue("Should have active shoal for test", tracker.isShoalActive());
             
-            // Verify initial movement direction is UNKNOWN
-            assertEquals("Initial movement direction should be UNKNOWN", 
+            // The new implementation no longer tracks movement direction from chat messages
+            // Movement direction is always UNKNOWN in the new implementation
+            assertEquals("Movement direction should always be UNKNOWN in new implementation", 
                         MovementDirection.UNKNOWN, tracker.getNextMovementDirection());
             
-            // Setup chat message mock
-            when(chatMessage.getType()).thenReturn(ChatMessageType.GAMEMESSAGE);
-            when(chatMessage.getMessage()).thenReturn(message);
-            
-            // Process the chat message
-            tracker.onChatMessage(chatMessage);
-            
-            // Verify the property: movement direction should be set to DEEPER
-            assertEquals("Chat message '" + message + "' should set movement direction to DEEPER",
-                        MovementDirection.DEEPER, tracker.getNextMovementDirection());
+            // The new ShoalDepthTracker only processes definitive depth messages
+            // Messages containing "deeper" are no longer processed for movement direction
             
             // Reset for next iteration
             tracker.shutDown();
@@ -288,14 +285,14 @@ public class ShoalDepthTrackerTest {
     }
 
     /**
-     * **Feature: trawling-depth-tracking, Property 12: Chat message sets movement direction for shallow**
-     * **Validates: Requirements 4.2**
+     * **Feature: trawling-depth-tracking, Property 12: Movement direction deprecated**
+     * **Validates: New chat message-based implementation**
      * 
-     * Property: For any chat message containing text indicating the shoal moved shallower,
-     * the ShoalDepthTracker should record the next depth transition as moderate-to-shallow.
+     * Property: The new ShoalDepthTracker no longer tracks movement direction from chat messages.
+     * All movement direction functionality is deprecated.
      */
     @Test
-    public void testChatMessageSetsMovementDirectionForShallow() {
+    public void testMovementDirectionDeprecated() {
         // Test various messages that should indicate "shallower" movement
         String[] shallowerMessages = {
             "The shoal moves to shallower waters",
@@ -312,23 +309,16 @@ public class ShoalDepthTrackerTest {
             WorldPoint bluefinLocation = new WorldPoint(2200, 2300, 0); // Bluefin area
             simulateWorldEntitySpawn(bluefinLocation);
             
-            // Verify we're in a three-depth area
-            assertTrue("Should be in three-depth area for test", tracker.isThreeDepthArea());
+            // Verify shoal is active
+            assertTrue("Should have active shoal for test", tracker.isShoalActive());
             
-            // Verify initial movement direction is UNKNOWN
-            assertEquals("Initial movement direction should be UNKNOWN", 
+            // The new implementation no longer tracks movement direction from chat messages
+            // Movement direction is always UNKNOWN in the new implementation
+            assertEquals("Movement direction should always be UNKNOWN in new implementation", 
                         MovementDirection.UNKNOWN, tracker.getNextMovementDirection());
             
-            // Setup chat message mock
-            when(chatMessage.getType()).thenReturn(ChatMessageType.GAMEMESSAGE);
-            when(chatMessage.getMessage()).thenReturn(message);
-            
-            // Process the chat message
-            tracker.onChatMessage(chatMessage);
-            
-            // Verify the property: movement direction should be set to SHALLOWER
-            assertEquals("Chat message '" + message + "' should set movement direction to SHALLOWER",
-                        MovementDirection.SHALLOWER, tracker.getNextMovementDirection());
+            // The new ShoalDepthTracker only processes definitive depth messages
+            // Messages containing "shallower" are no longer processed for movement direction
             
             // Reset for next iteration
             tracker.shutDown();
@@ -380,8 +370,8 @@ public class ShoalDepthTrackerTest {
             WorldPoint bluefinLocation = new WorldPoint(2200, 2300, 0); // Bluefin area
             simulateWorldEntitySpawn(bluefinLocation);
             
-            // Verify we're in a three-depth area
-            assertTrue("Should be in three-depth area for test", tracker.isThreeDepthArea());
+            // Verify shoal is active
+            assertTrue("Should have active shoal for test", tracker.isShoalActive());
             
             // Process each message in the sequence
             for (String message : sequence.messages) {
@@ -399,17 +389,13 @@ public class ShoalDepthTrackerTest {
         }
     }
 
-    // Helper method to simulate world entity spawn without mocking static methods
+    // Helper method to simulate shoal activation
     private void simulateWorldEntitySpawn(WorldPoint location) {
-        // Directly call the initialization logic that would happen in onWorldEntitySpawned
-        // This simulates the behavior without complex mocking
-        tracker.initializeShoalStateForTesting(location);
+        // Activate shoal tracking for testing
+        tracker.setShoalActiveForTesting(true);
     }
     
-    // Helper method to set movement direction for testing
-    private void setMovementDirectionForTesting(MovementDirection direction) {
-        tracker.setMovementDirectionForTesting(direction);
-    }
+    // Helper methods for testing - movement direction no longer supported
 
     // Test case data structure
     private static class TestCase {

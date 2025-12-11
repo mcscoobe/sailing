@@ -7,14 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
-import net.runelite.api.WorldEntity;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.WorldEntitySpawned;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
@@ -22,16 +17,13 @@ import javax.inject.Singleton;
 import java.util.Set;
 
 /**
- * Service component that tracks the current depth state of active shoals
+ * Service component that tracks the current depth state of active shoals based entirely on chat messages
  */
 @Slf4j
 @Singleton
 public class ShoalDepthTracker implements PluginLifecycleComponent {
 
-    // WorldEntity config ID for moving shoals
-    private static final int SHOAL_WORLD_ENTITY_CONFIG_ID = 4;
-    
-    // Shoal object IDs - used to detect any shoal presence
+    // Shoal object IDs - used to detect shoal presence for activation
     private static final Set<Integer> SHOAL_OBJECT_IDS = ImmutableSet.of(
         TrawlingData.ShoalObjectID.MARLIN,
         TrawlingData.ShoalObjectID.BLUEFIN,
@@ -45,21 +37,19 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
     );
 
     private final Client client;
+    private final NetDepthTracker netDepthTracker;
 
     // State fields
     private NetDepth currentDepth;
-    private boolean isThreeDepthArea;
-    private MovementDirection nextMovementDirection;
-    private WorldPoint activeShoalLocation;
+    private boolean shoalActive;
 
     @Inject
-    public ShoalDepthTracker(Client client) {
+    public ShoalDepthTracker(Client client, NetDepthTracker netDepthTracker) {
         this.client = client;
+        this.netDepthTracker = netDepthTracker;
         // Initialize with default values
         this.currentDepth = null;
-        this.isThreeDepthArea = false;
-        this.nextMovementDirection = MovementDirection.UNKNOWN;
-        this.activeShoalLocation = null;
+        this.shoalActive = false;
     }
 
     @Override
@@ -84,20 +74,26 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
         return currentDepth;
     }
 
+    public boolean isShoalActive() {
+        return shoalActive;
+    }
+
+    /**
+     * Legacy method for compatibility - three-depth areas are no longer tracked
+     * @deprecated Use isShoalActive() instead
+     */
+    @Deprecated
     public boolean isThreeDepthArea() {
-        return isThreeDepthArea;
+        return shoalActive;
     }
 
+    /**
+     * Legacy method for compatibility - movement direction is no longer tracked
+     * @deprecated Movement direction is determined from chat messages in real-time
+     */
+    @Deprecated
     public MovementDirection getNextMovementDirection() {
-        return nextMovementDirection;
-    }
-
-    // Called by NetDepthTimer when depth changes
-    public void notifyDepthChange(NetDepth newDepth) {
-        this.currentDepth = newDepth;
-        // Clear movement direction after depth transitions
-        this.nextMovementDirection = MovementDirection.UNKNOWN;
-        log.debug("Depth changed to: {}, movement direction cleared", newDepth);
+        return MovementDirection.UNKNOWN;
     }
 
     @Subscribe
@@ -105,36 +101,11 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
         GameObject obj = e.getGameObject();
         int objectId = obj.getId();
         
-        log.debug("GameObject spawned: ID={}, location={}", objectId, obj.getWorldLocation());
-        
         if (SHOAL_OBJECT_IDS.contains(objectId)) {
-            log.info("*** SHOAL GAMEOBJECT DETECTED *** ID={}, location={}", objectId, obj.getWorldLocation());
-            // Don't initialize state yet - wait for WorldEntity spawn to get proper top-level coordinates
-        }
-    }
-
-    @Subscribe
-    public void onWorldEntitySpawned(WorldEntitySpawned e) {
-        WorldEntity entity = e.getWorldEntity();
-        
-        log.info("*** ShoalDepthTracker - WorldEntity spawned: config={}, configId={} ***", 
-                 entity.getConfig(), 
-                 entity.getConfig() != null ? entity.getConfig().getId() : "null");
-        
-        // Only track shoal WorldEntity
-        if (entity.getConfig() != null && entity.getConfig().getId() == SHOAL_WORLD_ENTITY_CONFIG_ID) {
-            LocalPoint localPos = entity.getCameraFocus();
-            log.info("*** SHOAL WORLDENTITY DETECTED IN SHOALDEPTHTRACKER *** configId={}, localPos={}", 
-                    entity.getConfig().getId(), localPos);
-            
-            if (localPos != null) {
-                WorldPoint worldPos = WorldPoint.fromLocal(client, localPos);
-                log.info("Converted to WorldPoint: {}", worldPos);
-                if (worldPos != null) {
-                    initializeShoalState(worldPos);
-                }
-            }
-            log.info("Shoal WorldEntity spawned, initialized depth tracking");
+            // Shoal detected - activate tracking
+            shoalActive = true;
+            log.debug("*** SHOAL DETECTED *** ID={}, location={} - Chat message tracking activated", 
+                     objectId, obj.getWorldLocation());
         }
     }
 
@@ -145,114 +116,158 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
         
         if (SHOAL_OBJECT_IDS.contains(objectId)) {
             // Shoal left world view - clear state
-            log.debug("Shoal despawned (left world view): ID={}", objectId);
+            log.debug("Shoal despawned (ID={}), clearing depth tracking state", objectId);
             clearState();
         }
     }
 
     @Subscribe
-    public void onGameTick(GameTick e) {
-        // Track timing-based transitions
-        // This is a simplified implementation - in practice, NetDepthTimer handles the complex timing
-        // and calls notifyDepthChange when transitions occur
-        // This method is here to support the interface and future enhancements
-    }
-
-    @Subscribe
     public void onChatMessage(ChatMessage e) {
-        String message = e.getMessage();
-        log.info("=== CHAT MESSAGE DEBUG ===");
-        log.info("Type: {}", e.getType());
-        log.info("Message: '{}'", message);
-        log.info("Current state - threeDepthArea: {}, currentDepth: {}, nextMovementDirection: {}", 
-                 isThreeDepthArea, currentDepth, nextMovementDirection);
-        log.info("Active shoal location: {}", activeShoalLocation);
-        
-        // Only process messages when in three-depth areas
-        if (!isThreeDepthArea || currentDepth == null) {
-            log.info("IGNORING: Not in three-depth area ({}) or no current depth ({})", isThreeDepthArea, currentDepth);
+        // Only process when shoal is active
+        if (!shoalActive) {
             return;
         }
 
         // Only process game messages
         if (e.getType() != ChatMessageType.GAMEMESSAGE) {
-            log.info("IGNORING: Not a game message (type: {})", e.getType());
             return;
         }
 
+        String message = e.getMessage();
         if (message == null) {
-            log.info("IGNORING: Null message");
             return;
         }
 
         String lowerMessage = message.toLowerCase();
-        log.info("Checking message for depth keywords: '{}'", lowerMessage);
+        log.debug("=== CHAT MESSAGE ANALYSIS ===");
+        log.debug("Message: '{}'", message);
+        log.debug("Current depth: {}", currentDepth);
 
-        // Parse messages for "deeper" keywords and set nextMovementDirection to DEEPER
-        if (lowerMessage.contains("deeper")) {
-            MovementDirection oldDirection = this.nextMovementDirection;
-            this.nextMovementDirection = MovementDirection.DEEPER;
-            log.info("*** DEEPER MOVEMENT DETECTED *** - changed from {} to {}", oldDirection, this.nextMovementDirection);
-            log.info("Full message: '{}'", message);
+        // Only set shoal depth when we have definitive information
+        if (lowerMessage.contains("correct depth for the nearby")) {
+            // DEFINITIVE: Net is at correct depth - shoal matches current net depth
+            NetDepth netDepth = getCurrentNetDepth();
+            if (netDepth != null) {
+                updateShoalDepth(netDepth, "CONFIRMED: Net at correct depth - shoal matches net");
+            }
         }
-        // Parse messages for "shallower" keywords and set nextMovementDirection to SHALLOWER
-        else if (lowerMessage.contains("shallower")) {
-            MovementDirection oldDirection = this.nextMovementDirection;
-            this.nextMovementDirection = MovementDirection.SHALLOWER;
-            log.info("*** SHALLOWER MOVEMENT DETECTED *** - changed from {} to {}", oldDirection, this.nextMovementDirection);
-            log.info("Full message: '{}'", message);
-        } else {
-            log.info("No depth keywords found in message");
+        else if (lowerMessage.contains("closer to the surface")) {
+            // DEFINITIVE: Shoal moved shallower (only if we already know current depth)
+            if (currentDepth != null) {
+                NetDepth newDepth = moveDepthShallower(currentDepth);
+                updateShoalDepth(newDepth, "CONFIRMED: Shoal moved closer to surface");
+            } else {
+                log.debug("Shoal moved closer to surface, but current depth unknown - cannot update");
+            }
         }
-        log.info("=== END CHAT MESSAGE DEBUG ===");
+        else if (lowerMessage.contains("shoal swims deeper into")) {
+            // DEFINITIVE: Shoal moved deeper (only if we already know current depth)
+            if (currentDepth != null) {
+                NetDepth newDepth = moveDepthDeeper(currentDepth);
+                updateShoalDepth(newDepth, "CONFIRMED: Shoal swims deeper");
+            } else {
+                log.debug("Shoal swims deeper, but current depth unknown - cannot update");
+            }
+        }
+        else if (lowerMessage.contains("your net is not deep enough") || 
+                 lowerMessage.contains("your net is too shallow")) {
+            // INFORMATIONAL ONLY: Net needs to go deeper, but we don't know exact shoal depth
+            log.debug("FEEDBACK: Net too shallow - shoal is deeper than current net position");
+        }
+        else if (lowerMessage.contains("your net is too deep")) {
+            // INFORMATIONAL ONLY: Net needs to go shallower, but we don't know exact shoal depth
+            log.debug("FEEDBACK: Net too deep - shoal is shallower than current net position");
+        }
+
+        log.debug("=== END CHAT MESSAGE ANALYSIS ===");
     }
 
-    private void initializeShoalState(WorldPoint location) {
-        this.activeShoalLocation = location;
-        
-        // Determine fishing area from shoal location
-        int stopDuration = TrawlingData.FishingAreas.getStopDurationForLocation(location);
-        
-        if (stopDuration <= 0) {
-            log.warn("Shoal spawned at unknown location: {} (not in any defined fishing area)", location);
-            clearState();
-            return;
+    /**
+     * Update the tracked shoal depth
+     */
+    private void updateShoalDepth(NetDepth newDepth, String reason) {
+        if (newDepth != null && newDepth != currentDepth) {
+            NetDepth oldDepth = currentDepth;
+            currentDepth = newDepth;
+            log.debug("*** SHOAL DEPTH UPDATED *** {} -> {} ({})", oldDepth, newDepth, reason);
+        } else if (newDepth == currentDepth) {
+            log.debug("*** SHOAL DEPTH CONFIRMED *** {} ({})", currentDepth, reason);
         }
-
-        // Determine if this is a three-depth area (Bluefin/Marlin areas)
-        this.isThreeDepthArea = (stopDuration == TrawlingData.ShoalStopDuration.BLUEFIN || 
-                                stopDuration == TrawlingData.ShoalStopDuration.MARLIN);
-        
-        // Initialize currentDepth based on area's depth pattern
-        if (stopDuration == TrawlingData.ShoalStopDuration.MARLIN) {
-            // Marlin areas: start at MODERATE, transition to DEEP
-            this.currentDepth = NetDepth.MODERATE;
-        } else {
-            // All other areas (Bluefin, Halibut, Yellowfin): start at SHALLOW, transition to MODERATE
-            this.currentDepth = NetDepth.SHALLOW;
-        }
-        
-        // Reset movement direction
-        this.nextMovementDirection = MovementDirection.UNKNOWN;
-        
-        log.info("Initialized shoal depth tracking at {}: depth={}, threeDepthArea={}, stopDuration={}", 
-                 location, currentDepth, isThreeDepthArea, stopDuration);
     }
 
+    /**
+     * Get the current net depth (prioritize the net that's most likely to be interacting)
+     */
+    private NetDepth getCurrentNetDepth() {
+        NetDepth portDepth = netDepthTracker.getPortNetDepth();
+        NetDepth starboardDepth = netDepthTracker.getStarboardNetDepth();
+        
+        // If both nets are at the same depth, return that depth
+        if (portDepth != null && portDepth == starboardDepth) {
+            return portDepth;
+        }
+        
+        // Otherwise, return whichever net is not null (prefer starboard if both are different)
+        return starboardDepth != null ? starboardDepth : portDepth;
+    }
+
+
+
+    /**
+     * Move depth one level shallower
+     */
+    private NetDepth moveDepthShallower(NetDepth currentDepth) {
+        if (currentDepth == null) {
+            return null;
+        }
+        
+        switch (currentDepth) {
+            case DEEP:
+                return NetDepth.MODERATE;
+            case MODERATE:
+                return NetDepth.SHALLOW;
+            case SHALLOW:
+                return NetDepth.SHALLOW; // Can't go shallower
+        }
+        
+        return currentDepth;
+    }
+
+    /**
+     * Move depth one level deeper
+     */
+    private NetDepth moveDepthDeeper(NetDepth currentDepth) {
+        if (currentDepth == null) {
+            return null;
+        }
+        
+        switch (currentDepth) {
+            case SHALLOW:
+                return NetDepth.MODERATE;
+            case MODERATE:
+                return NetDepth.DEEP;
+            case DEEP:
+                return NetDepth.DEEP; // Can't go deeper
+        }
+        
+        return currentDepth;
+    }
+
+    /**
+     * Clear all tracking state
+     */
     private void clearState() {
         this.currentDepth = null;
-        this.isThreeDepthArea = false;
-        this.nextMovementDirection = MovementDirection.UNKNOWN;
-        this.activeShoalLocation = null;
+        this.shoalActive = false;
         log.debug("ShoalDepthTracker state cleared");
     }
 
     // Package-private methods for testing
-    void initializeShoalStateForTesting(WorldPoint location) {
-        initializeShoalState(location);
+    void setShoalActiveForTesting(boolean active) {
+        this.shoalActive = active;
     }
     
-    void setMovementDirectionForTesting(MovementDirection direction) {
-        this.nextMovementDirection = direction;
+    void setCurrentDepthForTesting(NetDepth depth) {
+        this.currentDepth = depth;
     }
 }

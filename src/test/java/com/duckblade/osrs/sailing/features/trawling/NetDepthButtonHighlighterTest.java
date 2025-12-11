@@ -123,10 +123,9 @@ public class NetDepthButtonHighlighterTest {
         };
 
         for (TestCase testCase : testCases) {
-            // Setup three-depth area
-            when(shoalDepthTracker.isThreeDepthArea()).thenReturn(true);
+            // Setup shoal active with known depth
+            when(shoalDepthTracker.isShoalActive()).thenReturn(true);
             when(shoalDepthTracker.getCurrentDepth()).thenReturn(testCase.shoalDepth);
-            when(shoalDepthTracker.getNextMovementDirection()).thenReturn(MovementDirection.UNKNOWN);
             
             // Setup net depths (both starboard and port for simplicity)
             when(netDepthTracker.getPortNetDepth()).thenReturn(testCase.netDepth);
@@ -136,14 +135,16 @@ public class NetDepthButtonHighlighterTest {
             // This tests the property without relying on complex widget mocking
             NetDepth requiredDepth = callDetermineRequiredDepth();
             
-            if (testCase.shouldHighlight) {
-                // For three-depth areas at DEEP or SHALLOW, should always target MODERATE
-                assertEquals("Three-depth area with shoal at " + testCase.shoalDepth + 
-                           " should target MODERATE depth", NetDepth.MODERATE, requiredDepth);
-            } else {
-                // When net depth matches shoal depth, no highlighting should occur
-                // This is tested by the matching depth property test
-            }
+            // In the new simplified logic, required depth always equals shoal depth
+            assertEquals("Required depth should always match shoal depth", 
+                        testCase.shoalDepth, requiredDepth);
+            
+            // Highlighting should occur only when net depth doesn't match shoal depth
+            boolean shouldHighlight = callShouldHighlightButtons();
+            boolean expectedHighlight = !testCase.netDepth.equals(testCase.shoalDepth);
+            assertEquals("Highlighting should occur only when net depth (" + testCase.netDepth + 
+                        ") doesn't match shoal depth (" + testCase.shoalDepth + ")", 
+                        expectedHighlight, shouldHighlight);
         }
     }
     
@@ -171,10 +172,9 @@ public class NetDepthButtonHighlighterTest {
         NetDepth[] allDepths = {NetDepth.SHALLOW, NetDepth.MODERATE, NetDepth.DEEP};
         
         for (NetDepth depth : allDepths) {
-            // Test in two-depth areas (simpler case)
-            when(shoalDepthTracker.isThreeDepthArea()).thenReturn(false);
+            // Setup shoal active with known depth
+            when(shoalDepthTracker.isShoalActive()).thenReturn(true);
             when(shoalDepthTracker.getCurrentDepth()).thenReturn(depth);
-            when(shoalDepthTracker.getNextMovementDirection()).thenReturn(MovementDirection.UNKNOWN);
             
             // Setup both nets at the same depth as shoal
             when(netDepthTracker.getPortNetDepth()).thenReturn(depth);
@@ -183,10 +183,10 @@ public class NetDepthButtonHighlighterTest {
             // Test the core logic: when depths match, should highlighting be disabled?
             NetDepth requiredDepth = callDetermineRequiredDepth();
             
-            // In two-depth areas, required depth should equal shoal depth
-            assertEquals("Required depth should match shoal depth in two-depth area", depth, requiredDepth);
+            // Required depth should always equal shoal depth
+            assertEquals("Required depth should match shoal depth", depth, requiredDepth);
             
-            // Test that shouldHighlightButtons returns true (shoal is active)
+            // When net depths match shoal depth, highlighting should be disabled
             boolean shouldHighlight = callShouldHighlightButtons();
             assertTrue("Should highlight buttons when shoal is active", shouldHighlight);
             

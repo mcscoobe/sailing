@@ -72,14 +72,14 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 
 	@Override
 	public void startUp() {
-		log.info("Route tracing ENABLED - tracking Bluefin/Vibrant shoal (IDs: {}, {})", 
+		log.debug("Route tracing ENABLED - tracking Bluefin/Vibrant shoal (IDs: {}, {})", 
 			BLUEFIN_SHOAL_ID, VIBRANT_SHOAL_ID);
 		wasTracking = true;
 	}
 
 	@Override
 	public void shutDown() {
-		log.info("Route tracing DISABLED");
+		log.debug("Route tracing DISABLED");
 		exportPath();
 		currentPath = null;
 		movingShoal = null;
@@ -90,15 +90,15 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 
 	private void exportPath() {
 		if (currentPath == null) {
-			log.info("No shoal path to export");
+			log.debug("No shoal path to export");
 			return;
 		}
 		
 		if (currentPath.hasValidPath()) {
-			log.info("Exporting shoal path with {} waypoints", currentPath.getWaypoints().size());
+			log.debug("Exporting shoal path with {} waypoints", currentPath.getWaypoints().size());
 			currentPath.logCompletedPath();
 		} else {
-			log.info("Path too short to export (need at least {} points, have {})", 
+			log.debug("Path too short to export (need at least {} points, have {})", 
 				MIN_PATH_POINTS, currentPath.getWaypoints().size());
 		}
 	}
@@ -127,11 +127,11 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 		// Initialize path if needed
 		if (currentPath == null) {
 			currentPath = new ShoalPath(objectId);
-			log.info("Started tracking shoal ID {} ({})", objectId, 
+			log.debug("Started tracking shoal ID {} ({})", objectId, 
 				objectId == BLUEFIN_SHOAL_ID ? "Bluefin" : "Vibrant");
 		} else if (currentShoalId != null && currentShoalId != objectId) {
 			// Shoal changed type (e.g., Bluefin -> Vibrant)
-			log.info("Shoal changed from {} to {} - continuing same path", 
+			log.debug("Shoal changed from {} to {} - continuing same path", 
 				currentShoalId == BLUEFIN_SHOAL_ID ? "Bluefin" : "Vibrant",
 				objectId == BLUEFIN_SHOAL_ID ? "Bluefin" : "Vibrant");
 		}
@@ -217,25 +217,25 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 		}
 
 		public void logCompletedPath() {
-			log.info("=== SHOAL PATH EXPORT (ID: {}) ===", shoalId);
-			log.info("Total waypoints: {}", waypoints.size());
-			log.info("");
-			log.info("// Shoal ID: {} - Copy this into ShoalPaths.java:", shoalId);
-			log.info("public static final WorldPoint[] SHOAL_{}_PATH = {{", shoalId);
+			log.debug("=== SHOAL PATH EXPORT (ID: {}) ===", shoalId);
+			log.debug("Total waypoints: {}", waypoints.size());
+			log.debug("");
+			log.debug("// Shoal ID: {} - Copy this into ShoalPaths.java:", shoalId);
+			log.debug("public static final WorldPoint[] SHOAL_{}_PATH = {{", shoalId);
 			
 			for (int i = 0; i < waypoints.size(); i++) {
 				Waypoint wp = waypoints.get(i);
 				WorldPoint pos = wp.getPosition();
 				String comment = wp.isStopPoint() ? " // STOP POINT" : "";
 				String comma = (i < waypoints.size() - 1) ? "," : "";
-				log.info("    new WorldPoint({}, {}, {}){}{}",
+				log.debug("    new WorldPoint({}, {}, {}){}{}",
 					pos.getX(), pos.getY(), pos.getPlane(), comma, comment);
 			}
 			
-			log.info("}};");
-			log.info("");
-			log.info("Stop points: {}", waypoints.stream().filter(Waypoint::isStopPoint).count());
-			log.info("=====================================");
+			log.debug("}};");
+			log.debug("");
+			log.debug("Stop points: {}", waypoints.stream().filter(Waypoint::isStopPoint).count());
+			log.debug("=====================================");
 		}
 	}
 

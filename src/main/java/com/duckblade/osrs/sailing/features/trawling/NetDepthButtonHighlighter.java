@@ -18,7 +18,8 @@ import javax.inject.Singleton;
 import java.awt.*;
 
 /**
- * Overlay component that handles button highlighting logic for net depth adjustments
+ * Overlay component that highlights net depth adjustment buttons when shoal depth is known.
+ * Highlights buttons to guide players toward matching their net depth to the current shoal depth.
  */
 @Slf4j
 @Singleton
@@ -94,10 +95,9 @@ public class NetDepthButtonHighlighter extends Overlay
         }
 
         NetDepth requiredDepth = determineRequiredDepth();
-        log.debug("Highlighting buttons - shoal: {}, 3-depth: {}, direction: {}, required: {}", 
+        log.debug("Highlighting buttons - shoal active: {}, shoal depth: {}, required: {}", 
+                 shoalDepthTracker.isShoalActive(),
                  shoalDepthTracker.getCurrentDepth(),
-                 shoalDepthTracker.isThreeDepthArea(),
-                 shoalDepthTracker.getNextMovementDirection(),
                  requiredDepth);
         
         if (requiredDepth != null) {
@@ -117,9 +117,18 @@ public class NetDepthButtonHighlighter extends Overlay
             return false;
         }
 
-        // Check if shoal is active
-        NetDepth currentShoalDepth = shoalDepthTracker.getCurrentDepth();
-        return currentShoalDepth != null;
+        // Check if shoal is active and we know its depth
+        if (!shoalDepthTracker.isShoalActive() || shoalDepthTracker.getCurrentDepth() == null) {
+            return false;
+        }
+
+        // Only highlight if at least one net is at the wrong depth
+        NetDepth requiredDepth = shoalDepthTracker.getCurrentDepth();
+        NetDepth portDepth = netDepthTracker.getPortNetDepth();
+        NetDepth starboardDepth = netDepthTracker.getStarboardNetDepth();
+        
+        return (portDepth != null && portDepth != requiredDepth) || 
+               (starboardDepth != null && starboardDepth != requiredDepth);
     }
 
     /**
@@ -131,29 +140,7 @@ public class NetDepthButtonHighlighter extends Overlay
             return null;
         }
 
-        boolean isThreeDepth = shoalDepthTracker.isThreeDepthArea();
-
-        // Handle three-depth area special case
-        if (isThreeDepth) {
-            if (currentShoalDepth == NetDepth.MODERATE) {
-                // At moderate depth in three-depth area, check movement direction
-                MovementDirection direction = shoalDepthTracker.getNextMovementDirection();
-                
-                if (direction == MovementDirection.UNKNOWN) {
-                    return null;
-                } else if (direction == MovementDirection.DEEPER) {
-                    return NetDepth.DEEP;
-                } else if (direction == MovementDirection.SHALLOWER) {
-                    return NetDepth.SHALLOW;
-                }
-            } else if (currentShoalDepth == NetDepth.DEEP || currentShoalDepth == NetDepth.SHALLOW) {
-                // At deep or shallow in three-depth area, highlight moderate
-                return NetDepth.MODERATE;
-            }
-            return null;
-        }
-
-        // For two-depth areas, return the current shoal depth
+        // Simple approach: nets should match the current shoal depth
         return currentShoalDepth;
     }
 

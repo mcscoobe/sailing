@@ -153,7 +153,7 @@ public class NetDepthTimer extends Overlay
             movingShoal = entity;
             lastShoalPosition = null;
             ticksAtSamePosition = 0;
-            log.info("Shoal WorldEntity spawned, tracking movement");
+            log.debug("Shoal WorldEntity spawned, tracking movement");
             
             // Create tracker if we don't have one yet, using WorldEntity's position
             if (activeTracker == null) {
@@ -162,14 +162,14 @@ public class NetDepthTimer extends Overlay
                     WorldPoint worldPos = WorldPoint.fromLocal(client, localPos);
                     int stopDuration = TrawlingData.FishingAreas.getStopDurationForLocation(worldPos);
                     
-                    log.info("Shoal WorldEntity at location: {}, StopDuration: {}", worldPos, stopDuration);
+                    log.debug("Shoal WorldEntity at location: {}, StopDuration: {}", worldPos, stopDuration);
                     
                     if (stopDuration > 0) {
                         activeTracker = new ShoalTracker(stopDuration, worldPos);
                         // Reset logging trackers when creating new tracker
                         lastLoggedTimerTick = -1;
                         lastLoggedTicksAtSamePosition = -1;
-                        log.info("Created ShoalTracker at location {}: stop duration = {} ticks", 
+                        log.debug("Created ShoalTracker at location {}: stop duration = {} ticks", 
                                  worldPos, stopDuration);
                     } else {
                         log.warn("Shoal spawned at unknown location: {} (not in any defined fishing area)", worldPos);
@@ -245,17 +245,17 @@ public class NetDepthTimer extends Overlay
                         if (ticksAtSamePosition == STOPPED_THRESHOLD_TICKS && !hasSeenShoalStop) {
                             // First time seeing shoal stop
                             hasSeenShoalStop = true;
-                            log.info("Shoal stopped at {} (first stop observed, waiting for movement)", currentPos);
+                            log.debug("Shoal stopped at {} (first stop observed, waiting for movement)", currentPos);
                         } else if (ticksAtSamePosition == STOPPED_THRESHOLD_TICKS && hasSeenShoalStop) {
                             // Shoal stopped again after moving - restart timer
                             activeTracker.restart();
                             // Reset logging trackers when timer restarts
                             lastLoggedTimerTick = -1;
-                            log.info("Shoal stopped at {}, timer restarted", currentPos);
+                            log.debug("Shoal stopped at {}, timer restarted", currentPos);
                         }
                     } else {
                         if (lastShoalPosition != null) {
-                            log.info("Shoal moved from {} to {}", lastShoalPosition, currentPos);
+                            log.debug("Shoal moved from {} to {}", lastShoalPosition, currentPos);
                         }
                         lastShoalPosition = currentPos;
                         ticksAtSamePosition = 0;
@@ -341,7 +341,7 @@ public class NetDepthTimer extends Overlay
         void restart() {
             this.ticksAtWaypoint = 0;
             this.timerActive = true; // Activate timer when restarting (after stop→move→stop)
-            log.info("Shoal at {} timer restarted and activated (duration: {} ticks)", 
+            log.debug("Shoal at {} timer restarted and activated (duration: {} ticks)", 
                      location, stopDuration);
         }
 
@@ -368,11 +368,9 @@ public class NetDepthTimer extends Overlay
                 int depthChangeTime = timing.getDepthChangeTime();
                 
                 if (ticksAtWaypoint == depthChangeTime) {
-                    // Depth change has occurred - notify ShoalDepthTracker
-                    NetDepth newDepth = timing.endDepth;
-                    shoalDepthTracker.notifyDepthChange(newDepth);
-                    log.debug("Shoal at {} depth change occurred at tick {}, notified ShoalDepthTracker of new depth: {}", 
-                             location, ticksAtWaypoint, newDepth);
+                    // Depth change timing reached - ShoalDepthTracker now handles depth via chat messages
+                    log.debug("Shoal at {} predicted depth change at tick {} (timer-based prediction only)", 
+                             location, ticksAtWaypoint);
                 }
                 
                 if (ticksAtWaypoint >= depthChangeTime) {
