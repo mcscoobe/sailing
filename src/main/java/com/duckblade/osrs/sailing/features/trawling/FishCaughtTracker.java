@@ -22,6 +22,8 @@ import org.apache.commons.lang3.ArrayUtils;
 @Slf4j
 @Singleton
 public class FishCaughtTracker implements PluginLifecycleComponent {
+    public static final Pattern CATCH_FISH_REGEX =
+        Pattern.compile("^(.+?) catch(?:es)? (an?|two|three|four|five|six) (.+?)!$");
     private final Client client;
     private final BoatTracker boatTracker;
 
@@ -40,24 +42,15 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
     }
 
     @Override
-    public boolean isEnabled(SailingConfig config) {
-        return true;
-    }
-
-    @Override
     public void startUp() {
         log.debug("FishCaughtTracker started");
-        fishCaught.clear();
-        fishInNet = 0;
-        lastFishCaught = null;
+        reset();
     }
 
     @Override
     public void shutDown() {
         log.debug("FishCaughtTracker shut down");
-        fishCaught.clear();
-        fishInNet = 0;
-        lastFishCaught = null;
+        reset();
     }
 
     @Subscribe
@@ -80,8 +73,7 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
             return;
         }
 
-        Pattern pattern = Pattern.compile("^(.+?) catch(?:es)? (an?|two|three|four|five|six) (.+?)!$");
-        Matcher matcher = pattern.matcher(message);
+        Matcher matcher = CATCH_FISH_REGEX.matcher(message);
         if (!matcher.find()) {
             return;
         }
@@ -127,5 +119,11 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
     public int getNetCapacity() {
         Boat boat = boatTracker.getBoat();
         return boat != null ? boat.getNetCapacity() : 0;
+    }
+
+    private void reset() {
+        fishCaught.clear();
+        fishInNet = 0;
+        lastFishCaught = null;
     }
 }
