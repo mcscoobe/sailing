@@ -47,7 +47,7 @@ public class ShoalDepthTrackerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        tracker = new ShoalDepthTracker(client, netDepthTracker);
+        tracker = new ShoalDepthTracker(client);
     }
 
     /**
@@ -190,8 +190,7 @@ public class ShoalDepthTrackerTest {
                 // Simulate a "correct depth" chat message to set the depth
                 when(chatMessage.getType()).thenReturn(ChatMessageType.GAMEMESSAGE);
                 when(chatMessage.getMessage()).thenReturn("correct depth for the nearby");
-                when(netDepthTracker.getPortNetDepth()).thenReturn(endDepth);
-                when(netDepthTracker.getStarboardNetDepth()).thenReturn(endDepth);
+                // NetDepthTracker no longer used - ShoalDepthTracker relies on movement messages
                 
                 tracker.onChatMessage(chatMessage);
                 

@@ -366,7 +366,7 @@ public interface SailingConfig extends Config
     @ConfigItem(
 		keyName = "trawlingHighlightShoals",
 		name = "Highlight Shoals",
-		description = "Highlight fish shoals with a 4x4 tile area.",
+		description = "Highlight fish shoals with a 10x10 tile area.",
 		section = SECTION_TRAWLING,
 		position = 1
 	)

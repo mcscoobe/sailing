@@ -37,16 +37,14 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
     );
 
     private final Client client;
-    private final NetDepthTracker netDepthTracker;
 
     // State fields
     private NetDepth currentDepth;
     private boolean shoalActive;
 
     @Inject
-    public ShoalDepthTracker(Client client, NetDepthTracker netDepthTracker) {
+    public ShoalDepthTracker(Client client) {
         this.client = client;
-        this.netDepthTracker = netDepthTracker;
         // Initialize with default values
         this.currentDepth = null;
         this.shoalActive = false;
@@ -146,10 +144,8 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
         // Only set shoal depth when we have definitive information
         if (lowerMessage.contains("correct depth for the nearby")) {
             // DEFINITIVE: Net is at correct depth - shoal matches current net depth
-            NetDepth netDepth = getCurrentNetDepth();
-            if (netDepth != null) {
-                updateShoalDepth(netDepth, "CONFIRMED: Net at correct depth - shoal matches net");
-            }
+            // Note: Cannot determine net depth without NetDepthTracker - rely on movement messages instead
+            log.debug("CONFIRMED: Net at correct depth - but cannot determine exact depth without NetDepthTracker");
         }
         else if (lowerMessage.contains("closer to the surface")) {
             // DEFINITIVE: Shoal moved shallower (only if we already know current depth)
@@ -195,21 +191,7 @@ public class ShoalDepthTracker implements PluginLifecycleComponent {
         }
     }
 
-    /**
-     * Get the current net depth (prioritize the net that's most likely to be interacting)
-     */
-    private NetDepth getCurrentNetDepth() {
-        NetDepth portDepth = netDepthTracker.getPortNetDepth();
-        NetDepth starboardDepth = netDepthTracker.getStarboardNetDepth();
-        
-        // If both nets are at the same depth, return that depth
-        if (portDepth != null && portDepth == starboardDepth) {
-            return portDepth;
-        }
-        
-        // Otherwise, return whichever net is not null (prefer starboard if both are different)
-        return starboardDepth != null ? starboardDepth : portDepth;
-    }
+
 
 
 

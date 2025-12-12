@@ -79,9 +79,8 @@ public class TrawlingOverlay extends OverlayPanel
                     Color color = timerInfo.isWaiting() ? Color.ORANGE : Color.YELLOW;
                     
                     panelComponent.getChildren().add(LineComponent.builder()
-                            .left("Depth Timer:")
-                            .right(message)
-                            .rightColor(color)
+                            .left("Depth Timer: " + message)
+                            .leftColor(color)
                             .build());
                 } else {
                     // Show ticks until depth change
@@ -89,9 +88,8 @@ public class TrawlingOverlay extends OverlayPanel
                     Color tickColor = ticksUntilChange <= 5 ? Color.RED : Color.WHITE;
                     
                     panelComponent.getChildren().add(LineComponent.builder()
-                            .left("Depth Change:")
-                            .right(ticksUntilChange + " ticks")
-                            .rightColor(tickColor)
+                            .left("Depth Change: " + ticksUntilChange + " ticks")
+                            .leftColor(tickColor)
                             .build());
                 }
             }

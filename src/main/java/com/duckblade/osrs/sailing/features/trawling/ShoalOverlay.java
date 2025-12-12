@@ -3,15 +3,13 @@ package com.duckblade.osrs.sailing.features.trawling;
 import com.duckblade.osrs.sailing.SailingConfig;
 import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.duckblade.osrs.sailing.features.util.SailingUtil;
-import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
 import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.Perspective;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
+
 
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
@@ -57,17 +55,15 @@ public class ShoalOverlay extends Overlay
     private final Client client;
     private final SailingConfig config;
     private final ShoalDepthTracker shoalDepthTracker;
-    private final NetDepthTracker netDepthTracker;
     private final BoatTracker boatTracker;
     private final Set<GameObject> shoals = new HashSet<>();
 
     @Inject
     public ShoalOverlay(@Nonnull Client client, SailingConfig config, 
-                       ShoalDepthTracker shoalDepthTracker, NetDepthTracker netDepthTracker, BoatTracker boatTracker) {
+                       ShoalDepthTracker shoalDepthTracker, BoatTracker boatTracker) {
         this.client = client;
         this.config = config;
         this.shoalDepthTracker = shoalDepthTracker;
-        this.netDepthTracker = netDepthTracker;
         this.boatTracker = boatTracker;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
@@ -137,19 +133,42 @@ public class ShoalOverlay extends Overlay
             return null;
         }
 
-        // Track which object IDs we've already rendered to avoid stacking overlays
-        Set<Integer> renderedIds = new HashSet<>();
-        
-        for (GameObject shoal : shoals) {
-            int objectId = shoal.getId();
-            // Only render one shoal per object ID to avoid overlay stacking
-            if (!renderedIds.contains(objectId)) {
-                renderShoalHighlight(graphics, shoal);
-                renderedIds.add(objectId);
-            }
+        // Only highlight one shoal at a time - choose the first available shoal
+        GameObject shoalToHighlight = selectShoalToHighlight();
+        if (shoalToHighlight != null) {
+            renderShoalHighlight(graphics, shoalToHighlight);
         }
 
         return null;
+    }
+
+    /**
+     * Select which shoal to highlight when multiple shoals are present.
+     * Priority: Special shoals (green) > Regular shoals (config color)
+     */
+    private GameObject selectShoalToHighlight() {
+        GameObject firstSpecialShoal = null;
+        GameObject firstRegularShoal = null;
+        
+        for (GameObject shoal : shoals) {
+            if (isSpecialShoal(shoal.getId())) {
+                if (firstSpecialShoal == null) {
+                    firstSpecialShoal = shoal;
+                }
+            } else {
+                if (firstRegularShoal == null) {
+                    firstRegularShoal = shoal;
+                }
+            }
+            
+            // If we have both types, we can stop looking
+            if (firstSpecialShoal != null && firstRegularShoal != null) {
+                break;
+            }
+        }
+        
+        // Prioritize special shoals over regular ones
+        return firstSpecialShoal != null ? firstSpecialShoal : firstRegularShoal;
     }
 
     private void renderShoalHighlight(Graphics2D graphics, GameObject shoal) {
@@ -182,24 +201,7 @@ public class ShoalOverlay extends Overlay
         return config.trawlingShoalHighlightColour();
     }
 
-    /**
-     * Helper method to get player's current net depth using NetDepthTracker
-     * Returns null if player has no nets equipped or nets are not available
-     */
-    private NetDepth getPlayerNetDepth() {
-        Boat boat = boatTracker.getBoat();
-        if (boat == null || boat.getNetTiers().isEmpty()) {
-            return null;
-        }
 
-        // Try to get depth from starboard net first, then port net
-        NetDepth starboardDepth = netDepthTracker.getStarboardNetDepth();
-        if (starboardDepth != null) {
-            return starboardDepth;
-        }
-
-        return netDepthTracker.getPortNetDepth();
-    }
 
 
 

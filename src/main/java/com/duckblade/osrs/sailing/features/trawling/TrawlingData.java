@@ -19,7 +19,7 @@ public class TrawlingData {
 
     public static class ShoalStopDuration {
         protected static final int YELLOWFIN = 100;
-        protected static final int HALIBUT = 80;
+        protected static final int HALIBUT = 76;
         protected static final int BLUEFIN = 66;
         protected static final int MARLIN = 50;
         protected static final int GIANT_KRILL = 90;

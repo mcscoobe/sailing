@@ -80,9 +80,8 @@ public class NetCapacityTracker implements PluginLifecycleComponent {
 
     private int parseFishCount(String message) {
         String lowerMessage = message.toLowerCase();
-        
         // Check for "a fish" or "an fish" (singular)
-        if (lowerMessage.contains(" a ") || lowerMessage.contains(" catch an ")) {
+        if (lowerMessage.contains(" a ") || lowerMessage.contains(" catch an ") || lowerMessage.contains("Trawler's trust:")) {
             return 1;
         }
         

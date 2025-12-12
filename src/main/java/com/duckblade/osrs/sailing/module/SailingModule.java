@@ -37,9 +37,7 @@ import com.duckblade.osrs.sailing.features.oceanencounters.MysteriousGlow;
 import com.duckblade.osrs.sailing.features.oceanencounters.OceanMan;
 import com.duckblade.osrs.sailing.features.salvaging.SalvagingHighlight;
 import com.duckblade.osrs.sailing.features.trawling.NetCapacityTracker;
-import com.duckblade.osrs.sailing.features.trawling.NetDepthButtonHighlighter;
 import com.duckblade.osrs.sailing.features.trawling.NetDepthTimer;
-import com.duckblade.osrs.sailing.features.trawling.NetDepthTracker;
 import com.duckblade.osrs.sailing.features.trawling.TrawlingOverlay;
 import com.duckblade.osrs.sailing.features.trawling.ShoalDepthTracker;
 import com.duckblade.osrs.sailing.features.trawling.ShoalOverlay;
@@ -99,9 +97,7 @@ public class SailingModule extends AbstractModule
 		MermaidTaskSolver mermaidTaskSolver,
 		MysteriousGlow mysteriousGlow,
 		NetCapacityTracker netCapacityTracker,
-		// NetDepthButtonHighlighter netDepthButtonHighlighter,
 		NetDepthTimer netDepthTimer,
-		// NetDepthTracker netDepthTracker,
 		TrawlingOverlay trawlingOverlay,
 		OceanMan oceanMan,
 		ShoalDepthTracker shoalDepthTracker,
