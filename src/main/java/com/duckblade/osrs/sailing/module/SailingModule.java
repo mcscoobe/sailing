@@ -99,9 +99,9 @@ public class SailingModule extends AbstractModule
 		MermaidTaskSolver mermaidTaskSolver,
 		MysteriousGlow mysteriousGlow,
 		NetCapacityTracker netCapacityTracker,
-		NetDepthButtonHighlighter netDepthButtonHighlighter,
+		// NetDepthButtonHighlighter netDepthButtonHighlighter,
 		NetDepthTimer netDepthTimer,
-		NetDepthTracker netDepthTracker,
+		// NetDepthTracker netDepthTracker,
 		TrawlingOverlay trawlingOverlay,
 		OceanMan oceanMan,
 		ShoalDepthTracker shoalDepthTracker,
@@ -152,10 +152,10 @@ public class SailingModule extends AbstractModule
 			.add(mermaidTaskSolver)
 			.add(mysteriousGlow)
 			.add(netCapacityTracker)
-			.add(netDepthButtonHighlighter)
+//			.add(netDepthButtonHighlighter)
 			.add(netDepthTimer)
 			.add(trawlingOverlay)
-			.add(netDepthTracker)
+//			.add(netDepthTracker)
 			.add(navigationOverlay)
 			.add(oceanMan)
 			.add(prioritizeCargoHold)
