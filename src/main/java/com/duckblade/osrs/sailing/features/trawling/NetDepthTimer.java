@@ -1,6 +1,7 @@
 package com.duckblade.osrs.sailing.features.trawling;
 
 import com.duckblade.osrs.sailing.SailingConfig;
+import com.duckblade.osrs.sailing.features.util.SailingUtil;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -73,6 +74,13 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
             return null;
         }
         
+        // Disable timer in ONE_DEPTH areas (Giant Krill areas)
+        WorldPoint playerLocation = SailingUtil.getTopLevelWorldPoint(client);
+        FishingAreaType areaType = TrawlingData.FishingAreas.getFishingAreaType(playerLocation);
+        if (areaType == FishingAreaType.ONE_DEPTH) {
+            return null; // Timer disabled in krill areas
+        }
+        
         boolean shoalIsMoving = ticksAtSamePosition < STOPPED_THRESHOLD_TICKS;
         
         if (!timerActive) {
@@ -98,6 +106,17 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
             // No shoal - reset state
             if (timerActive || hasBeenMoving) {
                 log.debug("No shoal detected - resetting timer state");
+                resetState();
+            }
+            return;
+        }
+        
+        // Disable timer processing in ONE_DEPTH areas (Giant Krill areas)
+        WorldPoint playerLocation = SailingUtil.getTopLevelWorldPoint(client);
+        FishingAreaType areaType = TrawlingData.FishingAreas.getFishingAreaType(playerLocation);
+        if (areaType == FishingAreaType.ONE_DEPTH) {
+            // Reset timer state if we're in a krill area
+            if (timerActive || hasBeenMoving) {
                 resetState();
             }
             return;

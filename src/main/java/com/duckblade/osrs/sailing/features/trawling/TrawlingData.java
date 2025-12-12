@@ -50,6 +50,15 @@ public class TrawlingData {
         // Expanded to ensure full coverage of shoal routes
         protected static final ShoalFishingArea WEISSMERE = new ShoalFishingArea(2570, 2925, 3880, 4200, ShoalStopDuration.MARLIN);
 
+        // One-depth areas (Giant Krill)
+        // TODO: Add haddock areas
+        private static final ShoalFishingArea[] ONE_DEPTH_AREAS = {
+            SIMIAN_SEA,
+            TURTLE_BELT,
+            GREAT_SOUND,
+            SUNSET_BAY
+        };
+
         // Three-depth areas (Bluefin and Marlin)
         private static final ShoalFishingArea[] THREE_DEPTH_AREAS = {
             RAINBOW_REEF,
@@ -59,6 +68,10 @@ public class TrawlingData {
 
         // All fishing areas for lookup
         private static final ShoalFishingArea[] ALL_AREAS = {
+            SIMIAN_SEA,
+            TURTLE_BELT,
+            GREAT_SOUND,
+            SUNSET_BAY,
             PORT_ROBERTS,
             SOUTHERN_EXPANSE,
             DEEPFIN_POINT,
@@ -96,11 +109,19 @@ public class TrawlingData {
                 return null;
             }
 
+            // Check for ONE_DEPTH areas first (Giant Krill areas)
+            for (ShoalFishingArea area : ONE_DEPTH_AREAS) {
+                if (area.contains(location)) {
+                    return FishingAreaType.ONE_DEPTH;
+                }
+            }
+
+            // Check for THREE_DEPTH areas (Bluefin and Marlin areas)
             if (isThreeDepthArea(location)) {
                 return FishingAreaType.THREE_DEPTH;
             }
 
-            // Check if it's in any fishing area at all
+            // Check if it's in any other fishing area (TWO_DEPTH)
             for (ShoalFishingArea area : ALL_AREAS) {
                 if (area.contains(location)) {
                     return FishingAreaType.TWO_DEPTH;
