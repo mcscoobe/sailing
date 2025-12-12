@@ -105,6 +105,7 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
 
         fishCaught.merge(fish, quantity, Integer::sum);
         fishInNet += quantity;
+        lastFishCaught = fish;
     }
 
     private int wordToNumber(String word) {
