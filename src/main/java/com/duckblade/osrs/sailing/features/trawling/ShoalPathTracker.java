@@ -12,7 +12,6 @@ import net.runelite.api.GameObject;
 
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
 
 import net.runelite.client.eventbus.Subscribe;
@@ -38,18 +37,7 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 
 
 	
-	// All shoal object IDs from TrawlingData
-	private static final Set<Integer> ALL_SHOAL_IDS = ImmutableSet.of(
-		TrawlingData.ShoalObjectID.GIANT_KRILL,
-		TrawlingData.ShoalObjectID.HADDOCK,
-		TrawlingData.ShoalObjectID.YELLOWFIN,
-		TrawlingData.ShoalObjectID.HALIBUT,
-		TrawlingData.ShoalObjectID.BLUEFIN,
-		TrawlingData.ShoalObjectID.MARLIN,
-		TrawlingData.ShoalObjectID.SHIMMERING,
-		TrawlingData.ShoalObjectID.GLISTENING,
-		TrawlingData.ShoalObjectID.VIBRANT
-	);
+
 	
 	private static final int MIN_PATH_POINTS = 2; // Minimum points before we consider it a valid path
 	private static final int MIN_WAYPOINT_DISTANCE = 1; // World coordinate units (tiles)
@@ -86,7 +74,6 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 	@Override
 	public void startUp() {
 		log.debug("Route tracing ENABLED - tracking ALL shoal types");
-		log.debug("Supported shoal IDs: {}", ALL_SHOAL_IDS);
 		log.debug("ShoalTracker has shoal: {}", shoalTracker.hasShoal());
 		if (shoalTracker.hasShoal()) {
 			log.debug("Current shoal objects: {}", shoalTracker.getShoalObjects().size());
@@ -120,36 +107,7 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 		}
 	}
 
-	@Subscribe
-	public void onGameObjectSpawned(GameObjectSpawned e) {
-		GameObject obj = e.getGameObject();
-		int objectId = obj.getId();
-		
-		// Track any shoal type
-		if (!ALL_SHOAL_IDS.contains(objectId)) {
-			return;
-		}
 
-		// Initialize path if needed
-		if (currentPath == null) {
-			currentPath = new ShoalPath(objectId);
-			log.debug("Started tracking shoal ID {} ({})", objectId, getShoalName(objectId));
-		} else if (currentShoalId != null && currentShoalId != objectId) {
-			// Shoal changed type (e.g., Halibut -> Glistening)
-			log.debug("Shoal changed from {} to {} - continuing same path", 
-				getShoalName(currentShoalId), getShoalName(objectId));
-		}
-		
-		// Store the current shoal type
-		currentShoalId = objectId;
-		
-		// Convert to WorldPoint for absolute positioning
-		LocalPoint localPos = obj.getLocalLocation();
-		WorldPoint worldPos = WorldPoint.fromLocal(client, localPos);
-
-        currentPath.addPosition(worldPos);
-        log.debug("Shoal ID {} ({}) at {} (path size: {})", objectId, getShoalName(objectId), worldPos, currentPath.getWaypoints().size());
-    }
     
     private String getShoalName(int objectId) {
     	if (objectId == TrawlingData.ShoalObjectID.GIANT_KRILL) return "Giant Krill";
@@ -176,12 +134,22 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 			return;
 		}
 		
+		// Initialize path when shoal is first detected
+		if (currentPath == null && shoalTracker.hasShoal()) {
+			// Get the first available shoal object to determine type
+			Set<GameObject> shoalObjects = shoalTracker.getShoalObjects();
+			if (!shoalObjects.isEmpty()) {
+				GameObject firstShoal = shoalObjects.iterator().next();
+				int objectId = firstShoal.getId();
+				currentPath = new ShoalPath(objectId);
+				currentShoalId = objectId;
+				log.debug("Started tracking shoal ID {} ({})", objectId, getShoalName(objectId));
+			}
+		}
+		
 		if (currentPath == null) {
 			if (tickCounter % 50 == 0) {
-				log.debug("ShoalTracker has shoal but no currentPath - waiting for GameObject spawn");
-				log.debug("Available shoal objects: {}", shoalTracker.getShoalObjects().size());
-				shoalTracker.getShoalObjects().forEach(obj -> 
-					log.debug("  - Available: {} ({})", obj.getId(), getShoalName(obj.getId())));
+				log.debug("ShoalTracker has shoal but no currentPath initialized yet");
 			}
 			return;
 		}
@@ -191,6 +159,18 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 		WorldPoint currentLocation = shoalTracker.getCurrentLocation();
 		
 		if (currentLocation != null) {
+			// Check if shoal type changed (e.g., Halibut -> Glistening)
+			Set<GameObject> shoalObjects = shoalTracker.getShoalObjects();
+			if (!shoalObjects.isEmpty()) {
+				GameObject currentShoal = shoalObjects.iterator().next();
+				int objectId = currentShoal.getId();
+				if (currentShoalId != null && currentShoalId != objectId) {
+					log.debug("Shoal changed from {} to {} - continuing same path", 
+						getShoalName(currentShoalId), getShoalName(objectId));
+					currentShoalId = objectId;
+				}
+			}
+			
 			currentPath.updatePosition(currentLocation);
 			// Log occasionally to show it's working
 			if (tickCounter % 30 == 0) {

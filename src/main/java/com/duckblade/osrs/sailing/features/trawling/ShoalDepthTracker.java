@@ -2,19 +2,14 @@ package com.duckblade.osrs.sailing.features.trawling;
 
 import com.duckblade.osrs.sailing.SailingConfig;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
-import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.GameObject;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.GameObjectDespawned;
-import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Set;
 
 /**
  * Service component that tracks the current depth state of active shoals based entirely on chat messages
@@ -22,19 +17,6 @@ import java.util.Set;
 @Slf4j
 @Singleton
 public class ShoalDepthTracker implements PluginLifecycleComponent {
-
-    // Shoal object IDs - used to detect shoal presence for activation
-    private static final Set<Integer> SHOAL_OBJECT_IDS = ImmutableSet.of(
-        TrawlingData.ShoalObjectID.MARLIN,
-        TrawlingData.ShoalObjectID.BLUEFIN,
-        TrawlingData.ShoalObjectID.VIBRANT,
-        TrawlingData.ShoalObjectID.HALIBUT,
-        TrawlingData.ShoalObjectID.GLISTENING,
-        TrawlingData.ShoalObjectID.YELLOWFIN,
-        TrawlingData.ShoalObjectID.GIANT_KRILL,
-        TrawlingData.ShoalObjectID.HADDOCK,
-        TrawlingData.ShoalObjectID.SHIMMERING
-    );
 
     private final Client client;
     private final ShoalTracker shoalTracker;
