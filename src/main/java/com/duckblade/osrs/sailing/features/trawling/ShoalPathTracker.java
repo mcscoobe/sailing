@@ -10,17 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
-
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.*;
-
-import com.google.common.collect.ImmutableSet;
+import java.util.stream.Collectors;
 
 
 /*
@@ -45,7 +42,6 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 	private static final int AREA_MARGIN = 10; // World coordinate units (tiles)
 
 	private final Client client;
-	private final SailingConfig config;
 	private final ShoalPathTracerCommand tracerCommand;
 	private final ShoalTracker shoalTracker;
 	
@@ -54,13 +50,11 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
     private ShoalPath currentPath = null;
 	
 	private Integer currentShoalId = null;
-	private boolean wasTracking = false;
 	private int tickCounter = 0;
 
 	@Inject
 	public ShoalPathTracker(Client client, SailingConfig config, ShoalPathTracerCommand tracerCommand, ShoalTracker shoalTracker) {
 		this.client = client;
-		this.config = config;
 		this.tracerCommand = tracerCommand;
 		this.shoalTracker = shoalTracker;
 	}
@@ -73,23 +67,15 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 
 	@Override
 	public void startUp() {
-		log.debug("Route tracing ENABLED - tracking ALL shoal types");
-		log.debug("ShoalTracker has shoal: {}", shoalTracker.hasShoal());
-		if (shoalTracker.hasShoal()) {
-			log.debug("Current shoal objects: {}", shoalTracker.getShoalObjects().size());
-			shoalTracker.getShoalObjects().forEach(obj -> 
-				log.debug("  - Shoal object ID: {} ({})", obj.getId(), getShoalName(obj.getId())));
-		}
-		wasTracking = true;
+		log.debug("Route tracing enabled");
 	}
 
 	@Override
 	public void shutDown() {
-		log.debug("Route tracing DISABLED");
+		log.debug("Route tracing disabled");
 		exportPath();
 		currentPath = null;
 		currentShoalId = null;
-		wasTracking = false;
 	}
 
 	private void exportPath() {
@@ -127,10 +113,6 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 		tickCounter++;
 		
 		if (!shoalTracker.hasShoal()) {
-			// Only log occasionally to avoid spam
-			if (tickCounter % 100 == 0) {
-				log.debug("No shoal detected by ShoalTracker");
-			}
 			return;
 		}
 		
@@ -141,16 +123,13 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 			if (!shoalObjects.isEmpty()) {
 				GameObject firstShoal = shoalObjects.iterator().next();
 				int objectId = firstShoal.getId();
-				currentPath = new ShoalPath(objectId);
+				currentPath = new ShoalPath(objectId, shoalTracker);
 				currentShoalId = objectId;
-				log.debug("Started tracking shoal ID {} ({})", objectId, getShoalName(objectId));
+				log.debug("Path tracking initialized for {} (ID: {})", getShoalName(objectId), objectId);
 			}
 		}
 		
 		if (currentPath == null) {
-			if (tickCounter % 50 == 0) {
-				log.debug("ShoalTracker has shoal but no currentPath initialized yet");
-			}
 			return;
 		}
 		
@@ -165,28 +144,25 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 				GameObject currentShoal = shoalObjects.iterator().next();
 				int objectId = currentShoal.getId();
 				if (currentShoalId != null && currentShoalId != objectId) {
-					log.debug("Shoal changed from {} to {} - continuing same path", 
-						getShoalName(currentShoalId), getShoalName(objectId));
+					log.debug("Shoal changed from {} to {}", getShoalName(currentShoalId), getShoalName(objectId));
 					currentShoalId = objectId;
 				}
 			}
 			
 			currentPath.updatePosition(currentLocation);
-			// Log occasionally to show it's working
-			if (tickCounter % 30 == 0) {
-				log.debug("Tracking shoal at {} (path size: {})", currentLocation, currentPath.getWaypoints().size());
-			}
 		}
 	}
 
     @Getter
 	public class ShoalPath {
 		private final int shoalId;
+		private final ShoalTracker shoalTracker;
 		private final LinkedList<Waypoint> waypoints = new LinkedList<>();
 		private int ticksAtCurrentPosition = 0;
 
-		public ShoalPath(int shoalId) {
+		public ShoalPath(int shoalId, ShoalTracker shoalTracker) {
 			this.shoalId = shoalId;
+			this.shoalTracker = shoalTracker;
 		}
 
 		public void addPosition(WorldPoint position) {
@@ -216,6 +192,9 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 			// Mark previous waypoint as a stop point if we stayed there for 10+ ticks
 			if (ticksAtCurrentPosition >= 10) {
 				lastWaypoint.setStopPoint(true);
+				// Get the actual stationary duration from ShoalTracker
+				int stationaryDuration = shoalTracker.getStationaryTicks();
+				lastWaypoint.setStopDuration(stationaryDuration);
 			}
 
 			// combine sequential segments with the same slope to reduce number of waypoints
@@ -279,7 +258,7 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 				Waypoint wp = waypoints.get(i);
 				WorldPoint pos = wp.getPosition();
 				String comment = wp.isStopPoint() ? " // STOP POINT" : "";
-				log.debug("    new WorldPoint({}, {}, {}),{}",
+				log.info("    new WorldPoint({}, {}, {}),{}",
 					pos.getX(), pos.getY(), pos.getPlane(), comment);
 
 				minX = Math.min(minX, pos.getX());
@@ -296,6 +275,37 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 			log.debug("");
 			log.debug("Stop points: {}", waypoints.stream().filter(Waypoint::isStopPoint).count());
 			log.debug("");
+			
+			// Log stop durations for analysis
+			log.debug("Stop durations (ticks):");
+			for (int i = 0; i < waypoints.size(); i++) {
+				Waypoint wp = waypoints.get(i);
+				if (wp.isStopPoint() && wp.getStopDuration() > 0) {
+					log.info("  Stop {} (index {}): {} ticks at {}", 
+						stopPoints.indexOf(i) + 1, i, wp.getStopDuration(), wp.getPosition());
+				}
+			}
+			
+			// Calculate average stop duration
+			List<Integer> durations = waypoints.stream()
+				.filter(Waypoint::isStopPoint)
+				.mapToInt(Waypoint::getStopDuration)
+				.filter(d -> d > 0)
+				.boxed()
+				.collect(Collectors.toList());
+			
+			if (!durations.isEmpty()) {
+				double avgDuration = durations.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+				int minDuration = durations.stream().mapToInt(Integer::intValue).min().orElse(0);
+				int maxDuration = durations.stream().mapToInt(Integer::intValue).max().orElse(0);
+				log.debug("Duration stats - Avg: {:.1f}, Min: {}, Max: {} ticks", avgDuration, minDuration, maxDuration);
+			}
+			else
+			{
+				log.debug("Duration empty, we simply just dont know");
+			}
+			log.debug("");
+			
 			log.debug("// Copy this into TrawlingData.java:");
 			log.debug("AREA = {}, {}, {}, {}",
 				minX - AREA_MARGIN, maxX + AREA_MARGIN, minY - AREA_MARGIN, maxY + AREA_MARGIN
@@ -311,6 +321,8 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 		private final WorldPoint position;
 		@Setter
         private boolean stopPoint;
+		@Setter
+		private int stopDuration = 0; // Duration in ticks that shoal was stationary at this point
 
 		public Waypoint(WorldPoint position, boolean stopPoint) {
 			this.position = position;

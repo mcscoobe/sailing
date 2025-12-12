@@ -19,10 +19,10 @@ public class TrawlingData {
 
     public static class ShoalStopDuration {
         protected static final int YELLOWFIN = 100;
-        protected static final int HALIBUT = 76;
+        protected static final int GIANT_KRILL = 90;
+        protected static final int HALIBUT = 78;
         protected static final int BLUEFIN = 66;
         protected static final int MARLIN = 50;
-        protected static final int GIANT_KRILL = 90;
         // Note: Haddock duration would be added here when known
         // protected static final int HADDOCK = ?;
     }
@@ -34,9 +34,12 @@ public class TrawlingData {
         protected static final ShoalFishingArea GREAT_SOUND = new ShoalFishingArea(1536, 1648, 3317, 3411, ShoalStopDuration.GIANT_KRILL);
         protected static final ShoalFishingArea SUNSET_BAY = new ShoalFishingArea(1477, 1604, 2860, 2959, ShoalStopDuration.GIANT_KRILL);
 
-        // Halibut areas (80 tick duration) - TWO_DEPTH
+        // Halibut areas (76 tick duration) - TWO_DEPTH
         protected static final ShoalFishingArea PORT_ROBERTS = new ShoalFishingArea(1821, 2032, 3120, 3420, ShoalStopDuration.HALIBUT);
-        protected static final ShoalFishingArea SOUTHERN_EXPANSE = new ShoalFishingArea(1870, 2180, 2171, 2512, ShoalStopDuration.HALIBUT);
+        protected static final ShoalFishingArea SOUTHERN_EXPANSE = new ShoalFishingArea(1880, 2096, 2282, 2488, ShoalStopDuration.HALIBUT);
+        
+        // Yellowfin areas (100 tick duration) - TWO_DEPTH
+        protected static final ShoalFishingArea DEEPFIN_POINT = new ShoalFishingArea(1633, 1819, 2533, 2731, ShoalStopDuration.YELLOWFIN);
         
         // Bluefin areas (66 tick duration) - THREE_DEPTH
         protected static final ShoalFishingArea RAINBOW_REEF = new ShoalFishingArea(2075, 2406, 2179, 2450, ShoalStopDuration.BLUEFIN);
@@ -58,6 +61,7 @@ public class TrawlingData {
         private static final ShoalFishingArea[] ALL_AREAS = {
             PORT_ROBERTS,
             SOUTHERN_EXPANSE,
+            DEEPFIN_POINT,
             RAINBOW_REEF,
             BUCCANEERS_HAVEN,
             WEISSMERE

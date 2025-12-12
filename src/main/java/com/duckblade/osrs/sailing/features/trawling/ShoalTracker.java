@@ -5,13 +5,18 @@ import com.duckblade.osrs.sailing.features.util.SailingUtil;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
 import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
 import net.runelite.api.Client;
+import net.runelite.api.DynamicObject;
 import net.runelite.api.GameObject;
+
+import net.runelite.api.Renderable;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.WorldEntitySpawned;
 import net.runelite.api.events.WorldViewUnloaded;
 import net.runelite.client.eventbus.Subscribe;
@@ -52,6 +57,11 @@ public class ShoalTracker implements PluginLifecycleComponent {
     private final Set<GameObject> shoalObjects = new HashSet<>();
     private WorldPoint currentLocation = null;
     private int shoalDuration = 0;
+    
+    // Movement tracking
+    private WorldPoint previousLocation = null;
+    private boolean wasMoving = false;
+    private int stationaryTicks = 0;
 
     @Inject
     public ShoalTracker(Client client) {
@@ -106,6 +116,20 @@ public class ShoalTracker implements PluginLifecycleComponent {
     }
 
     /**
+     * Check if the shoal is currently moving
+     */
+    public boolean isShoalMoving() {
+        return wasMoving;
+    }
+
+    /**
+     * Get the number of ticks the shoal has been stationary
+     */
+    public int getStationaryTicks() {
+        return stationaryTicks;
+    }
+
+    /**
      * Check if any shoal is currently active
      */
     public boolean hasShoal() {
@@ -120,6 +144,78 @@ public class ShoalTracker implements PluginLifecycleComponent {
     }
 
     /**
+     * Get the animation ID of a shoal GameObject, or -1 if no animation or not supported
+     */
+    public int getShoalAnimationId(GameObject shoalObject) {
+        if (shoalObject == null) {
+            return -1;
+        }
+
+        Renderable renderable = shoalObject.getRenderable();
+        return getAnimationIdFromRenderable(renderable);
+    }
+
+    /**
+     * Get animation ID from any Renderable object (supports multiple types)
+     * @param renderable The renderable object to check
+     * @return Animation ID, or -1 if no animation or unsupported type
+     */
+    public int getAnimationIdFromRenderable(Renderable renderable) {
+        if (renderable == null) {
+            return -1;
+        }
+
+        // DynamicObject (GameObjects with animations)
+        if (renderable instanceof DynamicObject) {
+            DynamicObject dynamicObject = (DynamicObject) renderable;
+            if (dynamicObject.getAnimation() != null) {
+                return dynamicObject.getAnimation().getId();
+            }
+        }
+        // Actor types (NPCs, Players) - they have direct getAnimation() method
+        else if (renderable instanceof Actor) {
+            Actor actor = (Actor) renderable;
+            return actor.getAnimation(); // Returns int directly, -1 if no animation
+        }
+        // Note: Other Renderable types like Model, GraphicsObject may exist but are less common
+        // Add more types here as needed
+
+        return -1;
+    }
+
+    /**
+     * Get the current animation ID of the first available shoal GameObject, or -1 if none available
+     */
+    public int getCurrentShoalAnimationId() {
+        if (shoalObjects.isEmpty()) {
+            return -1;
+        }
+
+        // Get animation from the first available shoal object
+        GameObject firstShoal = shoalObjects.iterator().next();
+        return getShoalAnimationId(firstShoal);
+    }
+
+    /**
+     * Debug method to log the Renderable type of a GameObject
+     */
+    public String getRenderableTypeInfo(GameObject gameObject) {
+        if (gameObject == null) {
+            return "null GameObject";
+        }
+
+        Renderable renderable = gameObject.getRenderable();
+        if (renderable == null) {
+            return "null Renderable";
+        }
+
+        String typeName = renderable.getClass().getSimpleName();
+        int animationId = getAnimationIdFromRenderable(renderable);
+        
+        return String.format("%s (animation: %d)", typeName, animationId);
+    }
+
+    /**
      * Update the current location from the WorldEntity
      */
     public void updateLocation() {
@@ -128,13 +224,71 @@ public class ShoalTracker implements PluginLifecycleComponent {
             if (localPos != null) {
                 WorldPoint newLocation = WorldPoint.fromLocal(client, localPos);
                 if (newLocation != null && !newLocation.equals(currentLocation)) {
+                    previousLocation = currentLocation;
                     currentLocation = newLocation;
                     // Update duration when location changes
                     shoalDuration = TrawlingData.FishingAreas.getStopDurationForLocation(currentLocation);
-                    log.debug("Shoal location updated to {}, duration: {} ticks", currentLocation, shoalDuration);
                 }
             }
         }
+
+        // Track movement state
+        trackMovement();
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick e) {
+        if (!hasShoal()) {
+            // Reset movement tracking when no shoal
+            resetMovementTracking();
+            return;
+        }
+        
+        // updateLocation() is called by other components, so we don't need to call it here
+        // Just ensure movement tracking happens each tick
+        trackMovement();
+    }
+    
+    /**
+     * Track shoal movement and count stationary ticks
+     */
+    private void trackMovement() {
+        if (currentLocation == null) {
+            return;
+        }
+        
+        // Check if shoal moved this tick
+        boolean isMoving = previousLocation != null && !currentLocation.equals(previousLocation);
+        
+        if (isMoving) {
+            // Shoal is moving
+            if (!wasMoving && stationaryTicks > 0) {
+                // Shoal just started moving after being stationary
+                // Note: Stop duration logging moved to ShoalPathTracker export
+            }
+            wasMoving = true;
+            stationaryTicks = 0;
+        } else {
+            // Shoal is not moving
+            if (wasMoving) {
+                // Shoal just stopped moving
+                // Note: Stop duration logging moved to ShoalPathTracker export
+                wasMoving = false;
+                stationaryTicks = 1; // Start counting from 1
+            } else if (currentLocation != null) {
+                // Shoal continues to be stationary
+                stationaryTicks++;
+            }
+        }
+    }
+    
+    /**
+     * Reset movement tracking state
+     */
+    private void resetMovementTracking() {
+        previousLocation = null;
+        wasMoving = false;
+        stationaryTicks = 0;
     }
 
     // Event handlers
@@ -152,9 +306,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
             updateLocation();
             
             if (!hadExistingShoal) {
-                log.debug("New shoal WorldEntity spawned at {}, duration: {} ticks", currentLocation, shoalDuration);
-            } else {
-                log.debug("Shoal WorldEntity updated (type change) at {}", currentLocation);
+                log.debug("Shoal WorldEntity spawned at {}", currentLocation);
             }
         }
     }
@@ -166,8 +318,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
         
         if (SHOAL_OBJECT_IDS.contains(objectId)) {
             shoalObjects.add(obj);
-            log.debug("Shoal GameObject spawned (ID={}) at {} (total objects: {})", 
-                     objectId, obj.getLocalLocation(), shoalObjects.size());
+            log.debug("Shoal GameObject spawned (ID={})", objectId);
         }
     }
 
@@ -176,8 +327,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
         GameObject obj = e.getGameObject();
         
         if (shoalObjects.remove(obj)) {
-            log.debug("Shoal GameObject despawned (ID={}) (remaining objects: {})", 
-                     obj.getId(), shoalObjects.size());
+            log.debug("Shoal GameObject despawned (ID={})", obj.getId());
         }
     }
 
@@ -210,7 +360,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
                 if (entity.getConfig() != null && entity.getConfig().getId() == SHOAL_WORLD_ENTITY_CONFIG_ID) {
                     currentShoalEntity = entity;
                     updateLocation();
-                    log.debug("Found shoal WorldEntity in scene at {}", currentLocation);
+                    log.debug("Found shoal WorldEntity in scene");
                     return;
                 }
             }
@@ -233,6 +383,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
         shoalObjects.clear();
         currentLocation = null;
         shoalDuration = 0;
+        resetMovementTracking();
         log.debug("ShoalTracker state cleared");
     }
 }
