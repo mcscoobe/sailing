@@ -48,7 +48,7 @@ public class TrawlingData {
         // Marlin areas (50 tick duration) - THREE_DEPTH
         // Weissmere coordinates based on actual in-game location (top-level coordinates)
         // Expanded to ensure full coverage of shoal routes
-        protected static final ShoalFishingArea WEISSMERE = new ShoalFishingArea(2570, 2925, 3880, 4200, ShoalStopDuration.MARLIN);
+        protected static final ShoalFishingArea WEISSMERE = new ShoalFishingArea(2590, 2870, 3945, 4146, ShoalStopDuration.MARLIN);
 
         // One-depth areas (Giant Krill)
         // TODO: Add haddock areas
