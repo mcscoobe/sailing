@@ -103,6 +103,11 @@ public class ShoalTracker implements PluginLifecycleComponent {
     @Getter
     private ShoalDepth currentShoalDepth = ShoalDepth.UNKNOWN;
 
+    /**
+     * Creates a new ShoalTracker with the specified client.
+     *
+     * @param client the RuneLite client instance
+     */
     @Inject
     public ShoalTracker(Client client) {
         this.client = client;
@@ -128,21 +133,27 @@ public class ShoalTracker implements PluginLifecycleComponent {
     // Public API methods
 
     /**
-     * Get all current shoal GameObjects (for rendering/highlighting)
+     * Gets all current shoal GameObjects for rendering/highlighting.
+     *
+     * @return a copy of the current shoal objects set
      */
     public Set<GameObject> getShoalObjects() {
         return new HashSet<>(shoalObjects); // Return copy to prevent external modification
     }
 
     /**
-     * Check if any shoal is currently active
+     * Checks if any shoal is currently active.
+     *
+     * @return true if a shoal entity or objects are present, false otherwise
      */
     public boolean hasShoal() {
         return currentShoalEntity != null || !shoalObjects.isEmpty();
     }
 
     /**
-     * Check if the shoal WorldEntity is valid and trackable
+     * Checks if the shoal WorldEntity is valid and trackable.
+     *
+     * @return true if the shoal entity exists and has a valid camera focus, false otherwise
      */
     public boolean isShoalEntityValid() {
         return currentShoalEntity != null && currentShoalEntity.getCameraFocus() != null;
@@ -224,13 +235,17 @@ public class ShoalTracker implements PluginLifecycleComponent {
     }
 
     /**
-     * Check if the shoal depth is currently known
-     * @return true if depth is not UNKNOWN
+     * Checks if the shoal depth is currently known.
+     *
+     * @return true if depth is not UNKNOWN, false otherwise
      */
     public boolean isShoalDepthKnown() {
         return currentShoalDepth != ShoalDepth.UNKNOWN;
     }
 
+    /**
+     * Updates the shoal location and tracks movement.
+     */
     public void updateLocation() {
         updateLocationFromEntity();
         trackMovement();
@@ -438,6 +453,9 @@ public class ShoalTracker implements PluginLifecycleComponent {
         return client.getLocalPlayer() == null || client.getLocalPlayer().getWorldView() == null;
     }
 
+    /**
+     * Attempts to find and set the current shoal WorldEntity.
+     */
     public void findShoalEntity() {
         WorldEntity foundEntity = searchForShoalEntity();
         

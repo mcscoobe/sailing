@@ -10,6 +10,7 @@ import net.runelite.api.Client;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.overlay.Overlay;
@@ -57,6 +58,15 @@ public class NetDepthButtonHighlighter extends Overlay
     private ShoalDepth cachedStarboardDepth = null;
     private boolean highlightingStateValid = false;
 
+    /**
+     * Creates a new NetDepthButtonHighlighter with the specified dependencies.
+     *
+     * @param shoalTracker tracker for shoal state and depth
+     * @param netDepthTracker tracker for current net depths
+     * @param boatTracker tracker for boat information
+     * @param client the RuneLite client instance
+     * @param config sailing configuration settings
+     */
     @Inject
     public NetDepthButtonHighlighter(ShoalTracker shoalTracker,
                                    NetDepthTracker netDepthTracker,
@@ -198,6 +208,8 @@ public class NetDepthButtonHighlighter extends Overlay
 
     private void renderCachedHighlights(Graphics2D graphics, Widget parent) {
         Color highlightColor = config.trawlingShoalHighlightColour();
+        log.debug("Rendering highlights - Port: {}, Starboard: {}, Color: {}", 
+                 shouldHighlightPort, shouldHighlightStarboard, highlightColor);
 
         if (shouldHighlightStarboard) {
             renderStarboardHighlight(graphics, parent, highlightColor);
@@ -210,6 +222,8 @@ public class NetDepthButtonHighlighter extends Overlay
 
     private void renderStarboardHighlight(Graphics2D graphics, Widget parent, Color highlightColor) {
         Widget starboardDepthWidget = parent.getChild(STARBOARD_DEPTH_WIDGET_INDEX);
+        log.debug("Starboard depth widget: {}, interactable: {}", 
+                 starboardDepthWidget != null, isWidgetInteractable(starboardDepthWidget));
         if (isWidgetInteractable(starboardDepthWidget)) {
             highlightNetButton(graphics, parent, cachedStarboardDepth, cachedRequiredDepth, 
                               STARBOARD_UP, STARBOARD_DOWN, highlightColor);
@@ -218,6 +232,8 @@ public class NetDepthButtonHighlighter extends Overlay
 
     private void renderPortHighlight(Graphics2D graphics, Widget parent, Color highlightColor) {
         Widget portDepthWidget = parent.getChild(PORT_DEPTH_WIDGET_INDEX);
+        log.debug("Port depth widget: {}, interactable: {}", 
+                 portDepthWidget != null, isWidgetInteractable(portDepthWidget));
         if (isWidgetInteractable(portDepthWidget)) {
             highlightNetButton(graphics, parent, cachedPortDepth, cachedRequiredDepth,
                               PORT_UP, PORT_DOWN, highlightColor);
@@ -276,7 +292,8 @@ public class NetDepthButtonHighlighter extends Overlay
     }
 
     private boolean isNetDepthVarbit(int varbitId) {
-        return varbitId == 19206 || varbitId == 19208;
+        return varbitId == VarbitID.SAILING_SIDEPANEL_BOAT_TRAWLING_NET_0_DEPTH || 
+               varbitId == VarbitID.SAILING_SIDEPANEL_BOAT_TRAWLING_NET_1_DEPTH;
     }
 
     private ShoalDepth determineRequiredDepth() {
@@ -291,7 +308,11 @@ public class NetDepthButtonHighlighter extends Overlay
         int buttonIndex = getButtonIndex(current, required, upIndex, downIndex);
         Widget button = getNetWidget(parent, buttonIndex);
         
+        log.debug("Button highlighting - Current: {}, Required: {}, ButtonIndex: {}, Button: {}, Highlightable: {}", 
+                 current, required, buttonIndex, button != null, isButtonHighlightable(button, parent));
+        
         if (isButtonHighlightable(button, parent)) {
+            log.debug("Drawing highlight for button at index {}", buttonIndex);
             drawButtonHighlight(graphics, button, color);
         }
     }

@@ -27,7 +27,14 @@ public class NetDepthTracker implements PluginLifecycleComponent {
     // Cached values for performance
     private ShoalDepth portNetDepth;
     private ShoalDepth starboardNetDepth;
+    private boolean portCacheValid = false;
+    private boolean starboardCacheValid = false;
 
+    /**
+     * Creates a new NetDepthTracker with the specified client.
+     *
+     * @param client the RuneLite client instance
+     */
     @Inject
     public NetDepthTracker(Client client) {
         this.client = client;
@@ -47,7 +54,9 @@ public class NetDepthTracker implements PluginLifecycleComponent {
     }
 
     /**
-     * Get the current port net depth
+     * Gets the current port net depth.
+     *
+     * @return the port net depth, or null if net is not lowered
      */
     public ShoalDepth getPortNetDepth() {
         if (portNetDepth == null) {
@@ -58,7 +67,9 @@ public class NetDepthTracker implements PluginLifecycleComponent {
     }
 
     /**
-     * Get the current starboard net depth
+     * Gets the current starboard net depth.
+     *
+     * @return the starboard net depth, or null if net is not lowered
      */
     public ShoalDepth getStarboardNetDepth() {
         if (starboardNetDepth == null) {
@@ -69,7 +80,9 @@ public class NetDepthTracker implements PluginLifecycleComponent {
     }
 
     /**
-     * Check if both nets are at the same depth
+     * Checks if both nets are at the same depth.
+     *
+     * @return true if both nets are at the same depth, false otherwise
      */
     public boolean areNetsAtSameDepth() {
         ShoalDepth port = getPortNetDepth();
@@ -78,7 +91,10 @@ public class NetDepthTracker implements PluginLifecycleComponent {
     }
 
     /**
-     * Check if both nets are at the specified depth
+     * Checks if both nets are at the specified depth.
+     *
+     * @param targetDepth the depth to check against
+     * @return true if both nets are at the target depth, false otherwise
      */
     public boolean areNetsAtDepth(ShoalDepth targetDepth) {
         return getPortNetDepth() == targetDepth && getStarboardNetDepth() == targetDepth;
@@ -133,7 +149,7 @@ public class NetDepthTracker implements PluginLifecycleComponent {
     }
 
     /**
-     * Force refresh of cached values (useful for debugging or when cache might be stale)
+     * Forces refresh of cached values (useful for debugging or when cache might be stale).
      */
     public void refreshCache() {
         log.debug("Force refreshing net depth cache");

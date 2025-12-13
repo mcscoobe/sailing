@@ -34,6 +34,12 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
 
     private String lastFishCaught;
 
+    /**
+     * Creates a new FishCaughtTracker with the specified dependencies.
+     *
+     * @param client the RuneLite client instance
+     * @param boatTracker tracker for boat information including net capacity
+     */
     @Inject
     public FishCaughtTracker(Client client, BoatTracker boatTracker) {
         this.client = client;
@@ -115,6 +121,11 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
         return wordIndex + 1;
     }
 
+    /**
+     * Gets the current net capacity based on the player's boat.
+     *
+     * @return the net capacity, or 0 if no boat is available
+     */
     public int getNetCapacity() {
         Boat boat = boatTracker.getBoat();
         return boat != null ? boat.getNetCapacity() : 0;

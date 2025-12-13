@@ -43,6 +43,12 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
     private int timerTicks = 0;
     private boolean timerActive = false;
 
+    /**
+     * Creates a new NetDepthTimer with the specified dependencies.
+     *
+     * @param client the RuneLite client instance
+     * @param shoalTracker tracker for shoal state and movement
+     */
     @Inject
     public NetDepthTimer(Client client, ShoalTracker shoalTracker) {
         this.client = client;
@@ -69,7 +75,9 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
     }
 
     /**
-     * Get current timer information for display in overlay
+     * Gets current timer information for display in overlay.
+     *
+     * @return timer information, or null if no shoal or timer is disabled
      */
     public TimerInfo getTimerInfo() {
         if (!shoalTracker.hasShoal()) {
