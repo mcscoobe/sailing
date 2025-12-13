@@ -71,8 +71,7 @@ public class TrawlingOverlay extends OverlayPanel
             if (timerInfo != null) {
 
                 if (!timerInfo.isActive()) {
-                    // Show waiting or calibrating message
-                    String message = timerInfo.isWaiting() ? "Waiting for shoal to stop" : "Calibrating...";
+                    String message = "Waiting for next stop";
                     Color color = timerInfo.isWaiting() ? Color.ORANGE : Color.YELLOW;
                     
                     panelComponent.getChildren().add(LineComponent.builder()

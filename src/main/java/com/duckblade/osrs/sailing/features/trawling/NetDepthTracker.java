@@ -61,7 +61,6 @@ public class NetDepthTracker implements PluginLifecycleComponent {
         if (!portCacheValid) {
             portNetDepth = getNetDepthFromVarbit(TRAWLING_NET_PORT_VARBIT);
             portCacheValid = true;
-            log.debug("Port net depth (fresh): {}", portNetDepth);
         }
         return portNetDepth;
     }
@@ -75,7 +74,6 @@ public class NetDepthTracker implements PluginLifecycleComponent {
         if (!starboardCacheValid) {
             starboardNetDepth = getNetDepthFromVarbit(TRAWLING_NET_STARBOARD_VARBIT);
             starboardCacheValid = true;
-            log.debug("Starboard net depth (fresh): {}", starboardNetDepth);
         }
         return starboardNetDepth;
     }
@@ -106,19 +104,11 @@ public class NetDepthTracker implements PluginLifecycleComponent {
         int varbitId = e.getVarbitId();
         
         if (varbitId == TRAWLING_NET_PORT_VARBIT) {
-            ShoalDepth oldDepth = portNetDepth;
-            int varbitValue = e.getValue();
             portNetDepth = getNetDepthFromVarbit(TRAWLING_NET_PORT_VARBIT);
             portCacheValid = true;
-            log.debug("Port net depth changed: {} -> {} (varbit: {}, value: {}, converted: {})", 
-                     oldDepth, portNetDepth, varbitId, varbitValue, portNetDepth);
         } else if (varbitId == TRAWLING_NET_STARBOARD_VARBIT) {
-            ShoalDepth oldDepth = starboardNetDepth;
-            int varbitValue = e.getValue();
             starboardNetDepth = getNetDepthFromVarbit(TRAWLING_NET_STARBOARD_VARBIT);
             starboardCacheValid = true;
-            log.debug("Starboard net depth changed: {} -> {} (varbit: {}, value: {}, converted: {})", 
-                     oldDepth, starboardNetDepth, varbitId, varbitValue, starboardNetDepth);
         }
     }
 
@@ -152,14 +142,12 @@ public class NetDepthTracker implements PluginLifecycleComponent {
         starboardNetDepth = getNetDepthFromVarbit(TRAWLING_NET_STARBOARD_VARBIT);
         portCacheValid = true;
         starboardCacheValid = true;
-        log.debug("Updated cached net depths - Port: {}, Starboard: {}", portNetDepth, starboardNetDepth);
     }
 
     /**
      * Forces refresh of cached values (useful for debugging or when cache might be stale).
      */
     public void refreshCache() {
-        log.debug("Force refreshing net depth cache");
         invalidateCache();
         updateCachedValues();
     }

@@ -31,7 +31,9 @@ import net.runelite.api.gameval.AnimationID;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static net.runelite.api.gameval.NpcID.SAILING_SHOAL_RIPPLES;
@@ -39,6 +41,8 @@ import static net.runelite.api.gameval.NpcID.SAILING_SHOAL_RIPPLES;
 /**
  * Centralized tracker for shoal WorldEntity and GameObject instances.
  * Provides a single source of truth for shoal state across all trawling components.
+ * Shoals are a WorldEntity (moving object), GameObject, and an NPC (renderable). All
+ * three are required for detection of movement, spawn/despawn, and shoal depth.
  */
 @Slf4j
 @Singleton
@@ -50,7 +54,6 @@ public class ShoalTracker implements PluginLifecycleComponent {
     private static final int SHOAL_DEPTH_MODERATE = AnimationID.DEEP_SEA_TRAWLING_SHOAL_MID;
     private static final int SHOAL_DEPTH_DEEP = AnimationID.DEEP_SEA_TRAWLING_SHOAL_DEEP;
     
-    // Shoal object IDs - used to detect any shoal presence
     private static final Set<Integer> SHOAL_OBJECT_IDS = ImmutableSet.of(
         TrawlingData.ShoalObjectID.MARLIN,
         TrawlingData.ShoalObjectID.BLUEFIN,
@@ -76,7 +79,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
     // Tracked state
     @Getter
     private WorldEntity currentShoalEntity = null;
-    private final Set<GameObject> shoalObjects = new HashSet<>();
+    private final Map<Integer, GameObject> shoalObjects = new HashMap<>();
     /**
      * -- GETTER --
      *  Get the current shoal location
@@ -113,6 +116,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
      *
      * @param client the RuneLite client instance
      */
+    
     @Inject
     public ShoalTracker(Client client, Notifier notifier, SailingConfig config, BoatTracker boatTracker) {
         this.client = client;
@@ -146,7 +150,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
      * @return a copy of the current shoal objects set
      */
     public Set<GameObject> getShoalObjects() {
-        return new HashSet<>(shoalObjects); // Return copy to prevent external modification
+        return new HashSet<>(shoalObjects.values());
     }
 
     /**
@@ -226,7 +230,6 @@ public class ShoalTracker implements PluginLifecycleComponent {
         
         if (newDepth != currentShoalDepth) {
 			checkDepthNotification();
-            logDepthChange(currentShoalDepth, newDepth, animationId);
             currentShoalDepth = newDepth;
         }
     }
@@ -243,13 +246,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
 	private void resetDepthToUnknown() {
         if (currentShoalDepth != ShoalDepth.UNKNOWN) {
             currentShoalDepth = ShoalDepth.UNKNOWN;
-            log.debug("Shoal depth reset to UNKNOWN (no NPC)");
         }
-    }
-
-    private void logDepthChange(ShoalDepth previousDepth, ShoalDepth newDepth, int animationId) {
-        log.debug("Shoal depth changed from {} to {} (animation: {})", 
-            previousDepth, newDepth, animationId);
     }
 
     /**
@@ -377,12 +374,10 @@ public class ShoalTracker implements PluginLifecycleComponent {
 
     private void handleShoalNpcSpawned(NPC npc) {
         currentShoalNpc = npc;
-        log.debug("Shoal NPC spawned (ID={})", npc.getId());
         updateShoalDepth();
     }
 
     private void handleShoalNpcDespawned(NPC npc) {
-        log.debug("Shoal NPC despawned (ID={})", npc.getId());
         currentShoalNpc = null;
         updateShoalDepth();
     }
@@ -424,7 +419,8 @@ public class ShoalTracker implements PluginLifecycleComponent {
     public void onGameObjectDespawned(GameObjectDespawned e) {
         GameObject obj = e.getGameObject();
         
-        if (shoalObjects.remove(obj)) {
+        GameObject removedObject = shoalObjects.remove(obj.getId());
+        if (removedObject != null && removedObject == obj) {
             handleShoalGameObjectDespawned(obj);
         }
     }
@@ -434,13 +430,15 @@ public class ShoalTracker implements PluginLifecycleComponent {
     }
 
     private void handleShoalGameObjectSpawned(GameObject obj) {
-        shoalObjects.add(obj);
-        log.debug("Shoal GameObject spawned (ID={})", obj.getId());
+        int objectId = obj.getId();
+        shoalObjects.put(objectId, obj);
     }
 
     private void handleShoalGameObjectDespawned(GameObject obj) {
-        log.debug("Shoal GameObject despawned (ID={})", obj.getId());
+        // GameObject removed from map in onGameObjectDespawned
     }
+
+
 
     @Subscribe
     public void onWorldViewUnloaded(WorldViewUnloaded e) {
@@ -516,6 +514,8 @@ public class ShoalTracker implements PluginLifecycleComponent {
         currentLocation = null;
         shoalDuration = 0;
     }
+
+
 
     /**
      * Clear all tracking state
