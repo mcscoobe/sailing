@@ -21,7 +21,7 @@ public class TrawlingData {
     public static class ShoalStopDuration {
         protected static final int YELLOWFIN = 100;
         protected static final int GIANT_KRILL = 90;
-        protected static final int HALIBUT = 78;
+        protected static final int HALIBUT = 76;
         protected static final int BLUEFIN = 66;
         protected static final int MARLIN = 50;
         protected static final int HADDOCK = 0; // One-depth area - no timer needed
