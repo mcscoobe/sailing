@@ -71,6 +71,7 @@ public class ShoalPaths {
 		new WorldPoint(1915, 3408, 0),
 		new WorldPoint(1918, 3409, 0),
 		new WorldPoint(1919, 3410, 0),
+        new WorldPoint(1938, 3410, 0),
 		new WorldPoint(1960, 3410, 0),
 		new WorldPoint(1962, 3409, 0),
 		new WorldPoint(1963, 3408, 0), // STOP POINT
