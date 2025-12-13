@@ -1,6 +1,7 @@
 package com.duckblade.osrs.sailing.module;
 
 import com.duckblade.osrs.sailing.SailingConfig;
+import com.duckblade.osrs.sailing.features.charting.*;
 import com.duckblade.osrs.sailing.features.reversebeep.ReverseBeep;
 import com.duckblade.osrs.sailing.features.barracudatrials.HidePortalTransitions;
 import com.duckblade.osrs.sailing.features.barracudatrials.JubblyJiveHelper;
@@ -10,12 +11,6 @@ import com.duckblade.osrs.sailing.features.barracudatrials.splits.BarracudaSplit
 import com.duckblade.osrs.sailing.features.barracudatrials.splits.BarracudaSplitsFileWriter;
 import com.duckblade.osrs.sailing.features.barracudatrials.splits.BarracudaSplitsOverlayPanel;
 import com.duckblade.osrs.sailing.features.barracudatrials.splits.BarracudaSplitsTracker;
-import com.duckblade.osrs.sailing.features.charting.CurrentDuckTaskTracker;
-import com.duckblade.osrs.sailing.features.charting.MermaidTaskSolver;
-import com.duckblade.osrs.sailing.features.charting.SeaChartOverlay;
-import com.duckblade.osrs.sailing.features.charting.SeaChartPanelOverlay;
-import com.duckblade.osrs.sailing.features.charting.SeaChartTaskIndex;
-import com.duckblade.osrs.sailing.features.charting.WeatherTaskTracker;
 import com.duckblade.osrs.sailing.features.courier.CourierDestinationOverlay;
 import com.duckblade.osrs.sailing.features.courier.CourierTaskLedgerOverlay;
 import com.duckblade.osrs.sailing.features.courier.CourierTaskTracker;
@@ -111,6 +106,7 @@ public class SailingModule extends AbstractModule
 		RapidsOverlay rapidsOverlay,
 		ReverseBeep reverseBeep,
 		SalvagingHighlight salvagingHighlight,
+        SeaChartMapPointManager seaChartMapPointManager,
 		SeaChartOverlay seaChartOverlay,
 		SeaChartPanelOverlay seaChartPanelOverlay,
 		SeaChartTaskIndex seaChartTaskIndex,
@@ -133,6 +129,7 @@ public class SailingModule extends AbstractModule
 			.add(barracudaSplitsOverlayPanel)
 			.add(barracudaSplitsFileWriter)
 			.add(boatTracker)
+            .add(cargoHoldTracker)
 			.add(castaway)
 			.add(clueCasket)
 			.add(clueTurtle)
@@ -166,6 +163,7 @@ public class SailingModule extends AbstractModule
 			.add(reverseBeep)
 			.add(salvagingHighlight)
 			.add(seaChartOverlay)
+            .add(seaChartMapPointManager)
 			.add(seaChartPanelOverlay)
 			.add(seaChartTaskIndex)
 			.add(speedBoostInfoBox)
