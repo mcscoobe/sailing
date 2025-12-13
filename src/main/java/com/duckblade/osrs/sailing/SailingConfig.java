@@ -470,7 +470,7 @@ public interface SailingConfig extends Config
 	)
 	default Notification notifyDepthChange()
 	{
-		return Notification.ON;
+		return Notification.OFF;
 	}
 
 	enum CrewmateMuteMode
