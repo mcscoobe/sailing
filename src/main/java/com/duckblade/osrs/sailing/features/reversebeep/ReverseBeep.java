@@ -10,12 +10,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.audio.AudioPlayer;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 
 @Slf4j
@@ -32,6 +34,8 @@ public class ReverseBeep implements PluginLifecycleComponent
 
 	private static final int VARB_VALUE_REVERSING = 3;
 
+	private final Client client;
+	private final ClientThread clientThread;
 	private final AudioPlayer audioPlayer;
 
 	private boolean reversing;
@@ -51,7 +55,7 @@ public class ReverseBeep implements PluginLifecycleComponent
 	@Override
 	public void startUp()
 	{
-		reversing = false;
+		clientThread.invoke(() -> reversing = client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_BOAT_MOVE_MODE) == VARB_VALUE_REVERSING);
 		es = Executors.newScheduledThreadPool(1);
 	}
 
