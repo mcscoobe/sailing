@@ -804,7 +804,7 @@ public interface SailingConfig extends Config
 
 	@ConfigItem(
 		keyName = "cargoHoldShowCounts",
-		name = "Show Item Count",
+		name = "Item Count",
 		description = "Shows total item counts over the cargo hold.",
 		section = SECTION_CARGO_HOLD_TRACKING,
 		position = 1
@@ -812,6 +812,32 @@ public interface SailingConfig extends Config
 	default boolean cargoHoldShowCounts()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "cargoHoldColourEmpty",
+		name = "Item Count Empty Colour",
+		description = "Colour to use for item count when the tracker is empty.<br>" +
+			"Set this to the same colour as 'Item Count Empty Colour' to have a constant colour.",
+		section = SECTION_CARGO_HOLD_TRACKING,
+		position = 1
+	)
+	default Color cargoHoldColourEmpty()
+	{
+		return Color.GREEN;
+	}
+
+	@ConfigItem(
+		keyName = "cargoHoldColourFull",
+		name = "Item Count Full Colour",
+		description = "Colour to use for item count when the tracker is full.<br>" +
+			"Set this to the same colour as 'Item Count Empty Colour' to have a constant colour.",
+		section = SECTION_CARGO_HOLD_TRACKING,
+		position = 1
+	)
+	default Color cargoHoldColourFull()
+	{
+		return Color.RED;
 	}
 
 	@ConfigItem(

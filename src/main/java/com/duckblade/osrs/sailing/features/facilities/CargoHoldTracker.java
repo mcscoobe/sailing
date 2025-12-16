@@ -109,6 +109,9 @@ public class CargoHoldTracker
 	private Multiset<Integer> memoizedInventory;
 
 	private boolean overlayEnabled;
+	private Color colourEmpty;
+	private Color colourFull;
+
 	private int pendingInventoryAction;
 	private boolean sawItemContainerUpdate;
 	private boolean sawInventoryContainerUpdate;
@@ -133,6 +136,8 @@ public class CargoHoldTracker
 	{
 		// always on for tracking events, conditionally display
 		overlayEnabled = config.cargoHoldShowCounts();
+		colourEmpty = config.cargoHoldColourEmpty();
+		colourFull = config.cargoHoldColourFull();
 		return true;
 	}
 
@@ -173,7 +178,7 @@ public class CargoHoldTracker
 		int maxCapacity = maxCapacity();
 		int usedCapacity = usedCapacity();
 		String text = (usedCapacity != -1 ? String.valueOf(usedCapacity) : "???") + "/" + (maxCapacity != -1 ? String.valueOf(maxCapacity) : "???");
-		Color textColour = ColorUtil.colorLerp(Color.GREEN, Color.RED, (double) usedCapacity / maxCapacity);
+		Color textColour = ColorUtil.colorLerp(colourEmpty, colourFull, (double) usedCapacity / maxCapacity);
 		Point textLocation = cargoHold.getCanvasTextLocation(g, text, 0);
 		if (textLocation != null)
 		{
