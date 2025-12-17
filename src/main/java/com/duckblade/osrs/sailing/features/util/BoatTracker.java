@@ -113,8 +113,8 @@ public class BoatTracker
         }
         if (WindCatcherTier.fromGameObjectId(o.getId()) != null)
         {
-            boat.getWindCatchers().add(o);
-            log.trace("found wind catcher {}={} for boat in wv {}", o.getId(), WindCatcherTier.fromGameObjectId(o.getId()), boat.getWorldViewId());
+            boat.setWindCatcher(o);
+            log.trace("found wind catcher {}={} for boat in wv {}", o.getId(), boat.getWindCatcherTier(), boat.getWorldViewId());
         }
 	}
 
@@ -165,8 +165,9 @@ public class BoatTracker
 		{
 			log.trace("unsetting cannon for boat in wv {}", boat.getWorldViewId());
 		}
-		if (boat.getWindCatchers().remove(o))
+		if (boat.getWindCatcher() == o)
 		{
+			boat.setWindCatcher(null);
 			log.trace("unsetting wind catcher for boat in wv {}", boat.getWorldViewId());
 		}
 	}

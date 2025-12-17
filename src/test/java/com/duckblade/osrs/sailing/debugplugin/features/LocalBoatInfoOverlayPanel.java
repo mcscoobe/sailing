@@ -124,12 +124,8 @@ public class LocalBoatInfoOverlayPanel
 
 		getPanelComponent().getChildren()
 			.add(LineComponent.builder()
-				.left("WindCatchers")
-				.right(boat
-					.getWindCatcherTiers()
-					.stream()
-					.map(WindCatcherTier::toString)
-					.collect(Collectors.joining(", ", "[", "]")))
+				.left("WindCatcher")
+				.right(String.valueOf(boat.getWindCatcherTier()))
 				.build());
 
 		return super.render(graphics);

@@ -26,12 +26,12 @@ public class Boat
 	GameObject helm;
 	GameObject cargoHold;
 	GameObject chumStation;
+	GameObject windCatcher;
 
 	@Setter(AccessLevel.NONE)
 	Set<GameObject> salvagingHooks = new HashSet<>();
     Set<GameObject> fishingNets = new HashSet<>();
     Set<GameObject> cannons = new HashSet<>();
-    Set<GameObject> windCatchers = new HashSet<>();
 
 	// these are intentionally not cached in case the object is transformed without respawning
 	// e.g. helms have a different idle vs in-use id
@@ -48,6 +48,11 @@ public class Boat
 	public HelmTier getHelmTier()
 	{
 		return helm != null ? HelmTier.fromGameObjectId(helm.getId()) : null;
+	}
+
+	public WindCatcherTier getWindCatcherTier()
+	{
+		return windCatcher != null ? WindCatcherTier.fromGameObjectId(windCatcher.getId()) : null;
 	}
 
 	public List<SalvagingHookTier> getSalvagingHookTiers()
@@ -71,14 +76,6 @@ public class Boat
 		return cannons.stream()
 			.mapToInt(GameObject::getId)
 			.mapToObj(CannonTier::fromGameObjectId)
-			.collect(Collectors.toList());
-	}
-
-	public List<WindCatcherTier> getWindCatcherTiers()
-	{
-		return windCatchers.stream()
-			.mapToInt(GameObject::getId)
-			.mapToObj(WindCatcherTier::fromGameObjectId)
 			.collect(Collectors.toList());
 	}
 
@@ -108,7 +105,7 @@ public class Boat
 		facilities.add(chumStation);
         facilities.addAll(fishingNets);
         facilities.addAll(cannons);
-        facilities.addAll(windCatchers);
+        facilities.add(windCatcher);
 		return facilities;
 	}
 
@@ -157,7 +154,7 @@ public class Boat
 	public String getDebugString()
 	{
 		return String.format(
-			"Id: %d, Hull: %s, Sail: %s, Helm: %s, Hook: %s, Cargo: %s, Chum: %s, Nets: %s, Cannons: %s, WindCatchers: %s",
+			"Id: %d, Hull: %s, Sail: %s, Helm: %s, Hook: %s, Cargo: %s, Chum: %s, Nets: %s, Cannons: %s, WindCatcher: %s",
 			worldViewId,
 			getHullTier(),
 			getSailTier(),
@@ -176,10 +173,7 @@ public class Boat
 				.stream()
 				.map(CannonTier::toString)
 				.collect(Collectors.joining(", ", "[", "]")),
-			getWindCatcherTiers()
-				.stream()
-				.map(WindCatcherTier::toString)
-				.collect(Collectors.joining(", ", "[", "]"))
+			getWindCatcherTier()
 		);
 	}
 }
