@@ -23,6 +23,8 @@ import com.duckblade.osrs.sailing.features.crewmates.CrewmateOverheadMuter;
 import com.duckblade.osrs.sailing.features.facilities.CargoHoldTracker;
 import com.duckblade.osrs.sailing.features.facilities.CrystalExtractorHighlight;
 import com.duckblade.osrs.sailing.features.facilities.LuffOverlay;
+import com.duckblade.osrs.sailing.features.facilities.SailingFacilityDragOverlay;
+import com.duckblade.osrs.sailing.features.facilities.SailingInterfaceRepositioner;
 import com.duckblade.osrs.sailing.features.facilities.SpeedBoostInfoBox;
 import com.duckblade.osrs.sailing.features.mes.DeprioSailsOffHelm;
 import com.duckblade.osrs.sailing.features.mes.HideStopNavigatingDuringTrials;
@@ -97,6 +99,8 @@ public class SailingModule extends AbstractModule
 		PrioritizeCargoHold prioritizeCargoHold,
 		RapidsOverlay rapidsOverlay,
 		ReverseBeep reverseBeep,
+		SailingFacilityDragOverlay sailingFacilityDragOverlay,
+		SailingInterfaceRepositioner sailingInterfaceRepositioner,
 		SalvagingHighlight salvagingHighlight,
 		SeaChartMapPointManager seaChartMapPointManager,
 		SeaChartOverlay seaChartOverlay,
@@ -141,6 +145,8 @@ public class SailingModule extends AbstractModule
 			.add(prioritizeCargoHold)
 			.add(rapidsOverlay)
 			.add(reverseBeep)
+			.add(sailingFacilityDragOverlay)
+			.add(sailingInterfaceRepositioner)
 			.add(salvagingHighlight)
 			.add(seaChartOverlay)
 			.add(seaChartMapPointManager)

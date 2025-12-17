@@ -1,5 +1,6 @@
 package com.duckblade.osrs.sailing;
 
+import com.duckblade.osrs.sailing.features.facilities.SailingInterfaceRepositioner;
 import com.duckblade.osrs.sailing.module.ComponentManager;
 import com.duckblade.osrs.sailing.module.SailingModule;
 import com.google.inject.Binder;
@@ -21,6 +22,9 @@ public class SailingPlugin extends Plugin
 
 	@Inject
 	private ComponentManager componentManager;
+	
+	@Inject
+	private SailingInterfaceRepositioner repositioner;
 
 	@Override
 	public void configure(Binder binder)
@@ -38,6 +42,15 @@ public class SailingPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		componentManager.onPluginStop();
+	}
+	
+	/**
+	 * Get the interface repositioner for console testing
+	 * Usage in RuneLite console: sailingPlugin.getRepositioner().testMoveChumToBottom()
+	 */
+	public SailingInterfaceRepositioner getRepositioner()
+	{
+		return repositioner;
 	}
 
 }
