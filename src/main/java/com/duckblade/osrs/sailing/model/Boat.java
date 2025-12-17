@@ -25,9 +25,11 @@ public class Boat
 	GameObject sail;
 	GameObject helm;
 	GameObject cargoHold;
+	GameObject chumStation;
 
 	@Setter(AccessLevel.NONE)
 	Set<GameObject> salvagingHooks = new HashSet<>();
+    Set<GameObject> fishingNets = new HashSet<>();
 
 	// these are intentionally not cached in case the object is transformed without respawning
 	// e.g. helms have a different idle vs in-use id
@@ -54,9 +56,22 @@ public class Boat
 			.collect(Collectors.toList());
 	}
 
+    public List<FishingNetTier> getNetTiers()
+    {
+        return fishingNets.stream()
+                .mapToInt(GameObject::getId)
+                .mapToObj(FishingNetTier::fromGameObjectId)
+                .collect(Collectors.toList());
+    }
+
 	public CargoHoldTier getCargoHoldTier()
 	{
 		return cargoHold != null ? CargoHoldTier.fromGameObjectId(cargoHold.getId()) : null;
+	}
+
+	public ChumStationTier getChumStationTier()
+	{
+		return chumStation != null ? ChumStationTier.fromGameObjectId(chumStation.getId()) : null;
 	}
 
 	public SizeClass getSizeClass()
@@ -72,6 +87,8 @@ public class Boat
 		facilities.add(helm);
 		facilities.addAll(salvagingHooks);
 		facilities.add(cargoHold);
+		facilities.add(chumStation);
+        facilities.addAll(fishingNets);
 		return facilities;
 	}
 
@@ -91,6 +108,21 @@ public class Boat
 		return getCargoCapacity(SailingUtil.isUim(client));
 	}
 
+    public int getNetCapacity()
+    {
+        int totalCapacity = 0;
+        List<FishingNetTier> netTiers = getNetTiers();
+        SizeClass sizeClass = getSizeClass();
+        for (FishingNetTier netTier : netTiers)
+        {
+            if (netTier != null)
+            {
+                totalCapacity += netTier.getCapacity();
+            }
+        }
+        return totalCapacity;
+    }
+
 	public int getSpeedBoostDuration()
 	{
 		SailTier sailTier = getSailTier();
@@ -105,7 +137,7 @@ public class Boat
 	public String getDebugString()
 	{
 		return String.format(
-			"Id: %d, Hull: %s, Sail: %s, Helm: %s, Hook: %s, Cargo: %s",
+			"Id: %d, Hull: %s, Sail: %s, Helm: %s, Hook: %s, Cargo: %s, Chum: %s, Nets: %s",
 			worldViewId,
 			getHullTier(),
 			getSailTier(),
@@ -114,7 +146,12 @@ public class Boat
 				.stream()
 				.map(SalvagingHookTier::toString)
 				.collect(Collectors.joining(", ", "[", "]")),
-			getCargoHoldTier()
+			getCargoHoldTier(),
+			getChumStationTier(),
+			getNetTiers()
+				.stream()
+				.map(FishingNetTier::toString)
+				.collect(Collectors.joining(", ", "[", "]"))
 		);
 	}
 }
