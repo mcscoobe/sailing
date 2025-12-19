@@ -16,9 +16,9 @@ public enum ShoalFishingArea
 		Shoal.GIANT_KRILL
 	),
 	SIMIAN_SEA(
-		new WorldArea(2745, 2538, 122, 112, 0),
+		new WorldArea(2755, 2548, 103, 92, 0),
 		ShoalPaths.GIANT_KRILL_SIMIAN_SEA,
-		new int[]{0, 12, 22, 26, 32, 37, 42},
+		new int[]{0, 6, 12, 20, 27, 39, 49},
 		Shoal.GIANT_KRILL
 	),
 	SUNSET_BAY(
