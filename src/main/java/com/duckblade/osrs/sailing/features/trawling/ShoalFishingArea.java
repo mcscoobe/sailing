@@ -97,11 +97,10 @@ public enum ShoalFishingArea
 		new int[]{0, 13, 45, 75, 93, 119, 136, 160, 169, 192},
 		Shoal.BLUEFIN
 	),
-
 	WEISSMERE(
 		new WorldArea(2590, 3945, 281, 202, 0),
 		ShoalPaths.MARLIN_WEISSMERE,
-		new int[]{0, 10, 40, 57, 65, 67, 118, 129},
+		new int[]{0, 16, 25, 57, 73, 81, 83, 128},
 		Shoal.MARLIN
 	),
 	BRITTLE_ISLE(
