@@ -37,8 +37,7 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
     private int ticksAtSamePosition = 0;
     private int ticksMoving = 0;
     private boolean hasBeenMoving = false;
-    private final int depthsPerStop = 2;
-    
+
     // Timer state
     private int timerTicks = 0;
     private boolean timerActive = false;
@@ -95,17 +94,26 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
         
         if (!timerActive) {
             if (shoalIsMoving) {
-                return new TimerInfo(false, true, 0); // Waiting for shoal to stop
+                return new TimerInfo(false, true, 0, false); // Waiting for shoal to stop
             } else {
-                return new TimerInfo(false, false, 0); // Calibrating
+                return new TimerInfo(false, false, 0, false); // Calibrating
             }
         }
         
-        // Timer counts down to depth change (half duration)
+        // Timer counts through full duration
         int shoalDuration = shoalTracker.getShoalDuration();
+        int depthsPerStop = 2;
         int depthChangeTime = shoalDuration / depthsPerStop;
-        int ticksUntilDepthChange = depthChangeTime - timerTicks;
-        return new TimerInfo(true, false, Math.max(0, ticksUntilDepthChange));
+        
+        if (timerTicks < depthChangeTime) {
+            // First phase: countdown to depth change
+            int ticksUntilDepthChange = depthChangeTime - timerTicks;
+            return new TimerInfo(true, false, Math.max(0, ticksUntilDepthChange), false);
+        } else {
+            // Second phase: countdown to movement
+            int ticksUntilMovement = shoalDuration - timerTicks;
+            return new TimerInfo(true, false, Math.max(0, ticksUntilMovement), true);
+        }
     }
 
 
@@ -154,11 +162,10 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
         if (timerActive) {
             timerTicks++;
             int shoalDuration = shoalTracker.getShoalDuration();
-            int depthChangeTime = shoalDuration / 2;
-            if (timerTicks >= depthChangeTime) {
-                // Depth change reached - stop timer
+            if (timerTicks >= shoalDuration) {
+                // Full duration reached - stop timer (shoal should start moving)
                 timerActive = false;
-                log.debug("Depth change reached at {} ticks (half of {} total duration)", timerTicks, shoalDuration);
+                log.debug("Full duration reached at {} ticks (shoal should move)", timerTicks);
             }
         }
     }
@@ -225,14 +232,21 @@ public class NetDepthTimer extends Overlay implements PluginLifecycleComponent {
         @Getter
         private final boolean waiting;
         private final int ticksRemaining;
+        @Getter
+        private final boolean postDepthChange;
 
-        public TimerInfo(boolean active, boolean waiting, int ticksRemaining) {
+        public TimerInfo(boolean active, boolean waiting, int ticksRemaining, boolean postDepthChange) {
             this.active = active;
             this.waiting = waiting;
             this.ticksRemaining = ticksRemaining;
+            this.postDepthChange = postDepthChange;
         }
 
         public int getTicksUntilDepthChange() {
+            return ticksRemaining;
+        }
+        
+        public int getTicksUntilMovement() {
             return ticksRemaining;
         }
     }

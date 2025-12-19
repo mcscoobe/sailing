@@ -19,7 +19,7 @@ import java.awt.Graphics2D;
 import org.apache.commons.text.WordUtils;
 
 /**
- * Combined overlay for trawling features including net capacity and depth timer
+ * Combined overlay for trawling features including net capacity and fish caught
  */
 @Slf4j
 @Singleton
@@ -28,14 +28,12 @@ public class TrawlingOverlay extends OverlayPanel
 
     private final Client client;
     private final FishCaughtTracker fishCaughtTracker;
-    private final NetDepthTimer netDepthTimer;
     private final SailingConfig config;
 
     @Inject
-    public TrawlingOverlay(Client client, FishCaughtTracker fishCaughtTracker, NetDepthTimer netDepthTimer, SailingConfig config) {
+    public TrawlingOverlay(Client client, FishCaughtTracker fishCaughtTracker, SailingConfig config) {
         this.client = client;
         this.fishCaughtTracker = fishCaughtTracker;
-        this.netDepthTimer = netDepthTimer;
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
     }
@@ -43,7 +41,7 @@ public class TrawlingOverlay extends OverlayPanel
     @Override
     public boolean isEnabled(SailingConfig config) {
         // Enable if either feature is enabled
-        return config.trawlingShowNetCapacity() || config.trawlingShowNetDepthTimer();
+        return config.trawlingShowNetCapacity() || config.trawlingShowFishCaught();
     }
 
     @Override
@@ -65,33 +63,7 @@ public class TrawlingOverlay extends OverlayPanel
         panelComponent.getChildren().clear();
         boolean hasContent = false;
 
-        // Add net depth timer section if enabled and available
-        if (shouldShowDepthTimer()) {
-            NetDepthTimer.TimerInfo timerInfo = netDepthTimer.getTimerInfo();
-            if (timerInfo != null) {
 
-                if (!timerInfo.isActive()) {
-                    String message = "Waiting for next stop";
-                    Color color = timerInfo.isWaiting() ? Color.ORANGE : Color.YELLOW;
-                    
-                    panelComponent.getChildren().add(LineComponent.builder()
-                            .left("Depth Timer: " + message)
-                            .leftColor(color)
-                            .build());
-                } else {
-                    // Show ticks until depth change
-                    int ticksUntilChange = timerInfo.getTicksUntilDepthChange();
-                    Color tickColor = ticksUntilChange <= 5 ? Color.RED : Color.WHITE;
-                    
-                    panelComponent.getChildren().add(LineComponent.builder()
-                            .left("Depth Change: " + ticksUntilChange + " ticks")
-                            .leftColor(tickColor)
-                            .build());
-                }
-
-                hasContent = true;
-            }
-        }
 
         // Add fish caught section if enabled and available
         if (shouldShowFishCaught()) {
@@ -159,10 +131,6 @@ public class TrawlingOverlay extends OverlayPanel
         }
 
         return null;
-    }
-
-    private boolean shouldShowDepthTimer() {
-        return config.trawlingShowNetDepthTimer();
     }
 
     private boolean shouldShowNetCapacity() {

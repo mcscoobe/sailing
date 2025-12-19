@@ -15,9 +15,6 @@ import net.runelite.api.coords.WorldPoint;
  */
 public class ShoalPaths {
 
-	// Halibut/Glistening Shoal - Port Roberts
-	// Traced: 2025-12-11 (updated with new complete trace)
-	// 188 waypoints, 9 stop points (complete loop)
 	public static final WorldPoint[] HALIBUT_PORT_ROBERTS = {
 		new WorldPoint(1845, 3290, 0), // STOP POINT
 		new WorldPoint(1845, 3312, 0),
@@ -244,9 +241,6 @@ public class ShoalPaths {
 		new WorldPoint(1845, 3290, 0)
 	};
 
-	// Halibut/Glistening Shoal - Southern Expanse
-	// Traced: 2025-12-12 (updated with new complete trace)
-	// 266 waypoints, 10 stop points (complete loop)
 	public static final WorldPoint[] HALIBUT_SOUTHERN_EXPANSE = {
 		new WorldPoint(1905, 2357, 0), // STOP POINT
 		new WorldPoint(1905, 2344, 0),
@@ -516,9 +510,6 @@ public class ShoalPaths {
 		new WorldPoint(1905, 2357, 0)
 	};
 
-// Bluefin/Vibrant Shoal - Rainbow Reef
-	// Traced: 2025-12-12 (updated with new complete trace)
-	// 198 waypoints, 10 stop points (complete loop)
 	public static final WorldPoint[] BLUEFIN_RAINBOW_REEF = {
 		new WorldPoint(2199, 2275, 0), // STOP POINT
 		new WorldPoint(2162, 2275, 0),
@@ -720,9 +711,6 @@ public class ShoalPaths {
 		new WorldPoint(2199, 2275, 0)
 	};
 
-	// Bluefin/Vibrant Shoal - Buccaneers Haven
-	// Traced: 2025-12-12 (updated with new complete trace)
-	// 224 waypoints, 12 stop points (complete loop)
 	public static final WorldPoint[] BLUEFIN_BUCCANEERS_HAVEN = {
 		new WorldPoint(2075, 3748, 0), // STOP POINT
 		new WorldPoint(2075, 3747, 0),
@@ -950,9 +938,6 @@ public class ShoalPaths {
 		new WorldPoint(2075, 3748, 0)
 	};
 
-	// Marlin Shoal - Brittle Isle
-	// Traced: 2025-12-12 (new complete trace)
-	// 240 waypoints, 9 stop points (complete loop)
 	public static final WorldPoint[] MARLIN_BRITTLE_ISLE = {
 		new WorldPoint(1932, 4037, 0), // STOP POINT
 		new WorldPoint(1988, 4037, 0),
@@ -1196,9 +1181,6 @@ public class ShoalPaths {
 		new WorldPoint(1916, 4037, 0)
 	};
 
-	// Marlin Shoal - Weissmere
-	// Traced: 2025-12-13 (updated with new complete trace)
-	// 144 waypoints, 8 stop points (complete loop)
 	public static final WorldPoint[] MARLIN_WEISSMERE = {
 		new WorldPoint(2613, 3968, 0), // STOP POINT
 		new WorldPoint(2612, 3968, 0),
@@ -1550,9 +1532,6 @@ public class ShoalPaths {
 		new WorldPoint(1574, 3338, 0),
 	};
 
-	// Yellowfin Shoal - The Crown Jewel
-	// Traced: 2025-12-12
-	// 179 waypoints, 8 stop points (complete loop)
 	public static final WorldPoint[] YELLOWFIN_THE_CROWN_JEWEL = {
 		new WorldPoint(1746, 2589, 0), // STOP POINT
 		new WorldPoint(1726, 2589, 0),
@@ -1735,9 +1714,6 @@ public class ShoalPaths {
 		new WorldPoint(1746, 2589, 0)
 	};
 
-	// Haddock Shoal - Misty Sea
-	// Traced: 2025-12-12 (ID: 59737, despite logs saying Halibut)
-	// 150 waypoints, 10 stop points (complete loop)
 	public static final WorldPoint[] HADDOCK_MISTY_SEA = {
 		new WorldPoint(1443, 2662, 0), // STOP POINT
 		new WorldPoint(1435, 2658, 0),

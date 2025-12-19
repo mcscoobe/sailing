@@ -438,8 +438,8 @@ public interface SailingConfig extends Config
 
 	@ConfigItem(
 		keyName = "trawlingShoalPathColour",
-		name = "Hardcoded Route Colour",
-		description = "Colour for displaying hardcoded shoal routes.",
+		name = "Route Colour",
+		description = "Colour for displaying shoal routes.",
 		section = SECTION_TRAWLING,
 		position = 7
 	)
