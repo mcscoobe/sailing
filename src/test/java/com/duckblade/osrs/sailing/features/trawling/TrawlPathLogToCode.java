@@ -36,7 +36,7 @@ public class TrawlPathLogToCode
 				int x2 = Integer.parseInt(parts[1]);
 				int y1 = Integer.parseInt(parts[2]);
 				int y2 = Integer.parseInt(parts[3]);
-				System.out.println("new WorldArea("+x1+", "+y1+", "+(x2-x1)+", "+(y2-y1)+", 0)");
+				System.out.println("new WorldArea("+x1+", "+y1+", "+(x2-x1+1)+", "+(y2-y1+1)+", 0)");
 			}
 
 			search = "STOP_INDICES = [";
