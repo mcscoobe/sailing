@@ -1,5 +1,4 @@
 package com.duckblade.osrs.sailing.features.util;
-
 import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.model.CargoHoldTier;
 import com.duckblade.osrs.sailing.model.ChumStationTier;

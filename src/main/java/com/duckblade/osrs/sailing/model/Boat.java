@@ -103,9 +103,10 @@ public class Boat
 		facilities.addAll(salvagingHooks);
 		facilities.add(cargoHold);
 		facilities.add(chumStation);
-        facilities.addAll(fishingNets);
-        facilities.addAll(cannons);
-        facilities.add(windCatcher);
+    facilities.addAll(fishingNets);
+    facilities.addAll(cannons);
+    facilities.add(windCatcher);
+    facilities.addAll(fishingNets);
 		return facilities;
 	}
 
@@ -174,6 +175,10 @@ public class Boat
 				.map(CannonTier::toString)
 				.collect(Collectors.joining(", ", "[", "]")),
 			getWindCatcherTier()
+			getNetTiers()
+				.stream()
+				.map(FishingNetTier::toString)
+				.collect(Collectors.joining(", ", "[", "]"))
 		);
 	}
 }
