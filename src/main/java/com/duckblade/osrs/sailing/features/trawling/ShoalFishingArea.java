@@ -28,9 +28,9 @@ public enum ShoalFishingArea
 		Shoal.GIANT_KRILL
 	),
 	TURTLE_BELT(
-		new WorldArea(2912, 2455, 126, 132, 0),
+		new WorldArea(2922, 2465, 106, 112, 0),
 		ShoalPaths.GIANT_KRILL_TURTLE_BELT,
-		new int[]{0, 11, 17, 23, 37, 44, 50, 73},
+		new int[]{0, 6, 20, 27, 33, 56, 66, 77},
 		Shoal.GIANT_KRILL
 	),
 

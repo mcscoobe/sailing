@@ -1378,23 +1378,6 @@ public class ShoalPaths {
 	};
 
 	public static final WorldPoint[] GIANT_KRILL_TURTLE_BELT = {
-		new WorldPoint(2964, 2525, 0), // STOP POINT
-		new WorldPoint(2970, 2531, 0),
-		new WorldPoint(2971, 2533, 0),
-		new WorldPoint(2971, 2535, 0),
-		new WorldPoint(2970, 2537, 0),
-		new WorldPoint(2968, 2539, 0),
-		new WorldPoint(2968, 2540, 0),
-		new WorldPoint(2967, 2540, 0),
-		new WorldPoint(2965, 2541, 0),
-		new WorldPoint(2945, 2541, 0),
-		new WorldPoint(2944, 2543, 0),
-		new WorldPoint(2944, 2545, 0), // STOP POINT
-		new WorldPoint(2944, 2546, 0),
-		new WorldPoint(2947, 2552, 0),
-		new WorldPoint(2953, 2558, 0),
-		new WorldPoint(2963, 2563, 0),
-		new WorldPoint(2965, 2563, 0),
 		new WorldPoint(2971, 2566, 0), // STOP POINT
 		new WorldPoint(2979, 2566, 0),
 		new WorldPoint(2981, 2565, 0),
@@ -1405,7 +1388,7 @@ public class ShoalPaths {
 		new WorldPoint(2989, 2523, 0),
 		new WorldPoint(2987, 2521, 0),
 		new WorldPoint(2986, 2519, 0),
-		new WorldPoint(2986, 2518, 0),
+		new WorldPoint(2986, 2517, 0),
 		new WorldPoint(2987, 2515, 0),
 		new WorldPoint(2988, 2514, 0),
 		new WorldPoint(2990, 2513, 0),
@@ -1435,10 +1418,10 @@ public class ShoalPaths {
 		new WorldPoint(2962, 2475, 0),
 		new WorldPoint(2961, 2476, 0),
 		new WorldPoint(2961, 2477, 0),
-		new WorldPoint(2959, 2481, 0),
-		new WorldPoint(2958, 2482, 0),
+		new WorldPoint(2958, 2483, 0),
 		new WorldPoint(2956, 2483, 0),
-		new WorldPoint(2950, 2483, 0),
+		new WorldPoint(2954, 2484, 0),
+		new WorldPoint(2952, 2484, 0),
 		new WorldPoint(2938, 2477, 0),
 		new WorldPoint(2937, 2477, 0),
 		new WorldPoint(2936, 2478, 0),
@@ -1461,7 +1444,24 @@ public class ShoalPaths {
 		new WorldPoint(2948, 2518, 0),
 		new WorldPoint(2953, 2518, 0),
 		new WorldPoint(2961, 2522, 0),
-		new WorldPoint(2964, 2525, 0),
+		new WorldPoint(2964, 2525, 0), // STOP POINT
+		new WorldPoint(2970, 2531, 0),
+		new WorldPoint(2971, 2533, 0),
+		new WorldPoint(2971, 2535, 0),
+		new WorldPoint(2970, 2537, 0),
+		new WorldPoint(2968, 2539, 0),
+		new WorldPoint(2968, 2540, 0),
+		new WorldPoint(2967, 2540, 0),
+		new WorldPoint(2965, 2541, 0),
+		new WorldPoint(2945, 2541, 0),
+		new WorldPoint(2944, 2543, 0),
+		new WorldPoint(2944, 2545, 0), // STOP POINT
+		new WorldPoint(2944, 2546, 0),
+		new WorldPoint(2947, 2552, 0),
+		new WorldPoint(2953, 2558, 0),
+		new WorldPoint(2963, 2563, 0),
+		new WorldPoint(2965, 2563, 0),
+		new WorldPoint(2971, 2566, 0),
 	};
 
 	public static final WorldPoint[] GIANT_KRILL_GREAT_SOUND = {
