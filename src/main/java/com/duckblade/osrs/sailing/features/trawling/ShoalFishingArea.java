@@ -24,7 +24,7 @@ public enum ShoalFishingArea
 	SUNSET_BAY(
 		new WorldArea(1477, 2860, 128, 100, 0),
 		ShoalPaths.GIANT_KRILL_SUNSET_BAY,
-		new int[]{0, 17, 29, 36, 46, 64, 73},
+		new int[]{0, 9, 19, 37, 46, 52, 68},
 		Shoal.GIANT_KRILL
 	),
 	TURTLE_BELT(
