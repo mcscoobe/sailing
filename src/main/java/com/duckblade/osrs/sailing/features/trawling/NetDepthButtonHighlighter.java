@@ -4,7 +4,9 @@ import com.duckblade.osrs.sailing.SailingConfig;
 import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.model.ShoalDepth;
+import com.duckblade.osrs.sailing.model.SizeClass;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
+import com.google.common.collect.Range;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.events.GameTick;
@@ -35,15 +37,12 @@ public class NetDepthButtonHighlighter extends Overlay
         implements PluginLifecycleComponent {
 
     // Widget indices for fishing net controls
-    private static final int STARBOARD_DOWN = 97;
-    private static final int STARBOARD_UP = 108;
-    private static final int PORT_DOWN = 132;
-    private static final int PORT_UP = 143;
-    
-    // Widget indices for net depth indicators
-    private static final int STARBOARD_DEPTH_WIDGET_INDEX = 96;
-    private static final int PORT_DEPTH_WIDGET_INDEX = 131;
-
+    private int starboardNetDownWidgetIndex;
+    private int starboardNetUpWidgetIndex;
+    private int starboardNetSpriteIndex;
+    private int portNetDownWidgetIndex;
+    private int portNetUpWidgetIndex;
+    private int portNetSpriteIndex;
     private final ShoalTracker shoalTracker;
     private final NetDepthTracker netDepthTracker;
     private final BoatTracker boatTracker;
@@ -121,6 +120,60 @@ public class NetDepthButtonHighlighter extends Overlay
         return null;
     }
 
+    private void SetWidgetIndexForSloop()
+    {
+        Widget sailingInterface = getSailingWidget();
+        Widget[] children = sailingInterface.getChildren();
+        int NET_TO_DOWN_BUTTON_DELTA = 1;
+        int NET_TO_UP_BUTTON_DELTA = 12;
+        if (children == null) return;
+        int spriteID;
+
+        boolean firstSpriteFound = false;
+        for (Widget child : children) {
+            spriteID = child.getSpriteId();
+            if (!isANetSprite(spriteID)) continue;
+            if (!firstSpriteFound)
+            {
+                log.debug("first found at {}", child.getIndex());
+                starboardNetSpriteIndex = child.getIndex();
+                starboardNetDownWidgetIndex = child.getIndex() + NET_TO_DOWN_BUTTON_DELTA;
+                starboardNetUpWidgetIndex = child.getIndex() + NET_TO_UP_BUTTON_DELTA;
+                firstSpriteFound = true;
+                continue;
+            }
+            log.debug("second found at {}", child.getIndex());
+            portNetSpriteIndex = child.getIndex();
+            portNetDownWidgetIndex = child.getIndex()  + NET_TO_DOWN_BUTTON_DELTA;
+            portNetUpWidgetIndex = child.getIndex() + NET_TO_UP_BUTTON_DELTA;
+        }
+    }
+
+    private boolean isANetSprite(int spriteID)
+    {
+        int netMinSpriteID = 7080;
+        int netMaxSpiteID = 7083;
+        Range<Integer> validRange = Range.closed(netMinSpriteID, netMaxSpiteID);
+        return validRange.contains(spriteID);
+    }
+
+    private void SetWidgetIndexForSkiff()
+    {
+        Widget sailingInterface = getSailingWidget();
+        Widget[] children = sailingInterface.getChildren();
+        int NET_TO_DOWN_BUTTON_DELTA = 1;
+        int NET_TO_UP_BUTTON_DELTA = 12;
+        int NET_SPRITE_ID = 7080;
+        if (children == null) return;
+        for (Widget child : children) {
+            int spriteID = child.getSpriteId();
+            if (spriteID != NET_SPRITE_ID) continue;
+            starboardNetSpriteIndex = child.getIndex();
+            starboardNetDownWidgetIndex = child.getIndex() + NET_TO_DOWN_BUTTON_DELTA;
+            starboardNetUpWidgetIndex = child.getIndex() + NET_TO_UP_BUTTON_DELTA;
+        }
+    }
+
     private boolean validatePrerequisites() {
         if (!canHighlightButtons()) {
             if (highlightingStateValid) {
@@ -194,27 +247,28 @@ public class NetDepthButtonHighlighter extends Overlay
         Color highlightColor = config.trawlingShoalHighlightColour();
 
         if (shouldHighlightStarboard) {
-            renderStarboardHighlight(graphics, parent, highlightColor);
+            renderNetHighlight(graphics, parent, highlightColor, 
+                starboardNetSpriteIndex, starboardNetUpWidgetIndex, starboardNetDownWidgetIndex, cachedStarboardDepth);
         }
 
         if (shouldHighlightPort) {
-            renderPortHighlight(graphics, parent, highlightColor);
+            renderNetHighlight(graphics, parent, highlightColor, 
+                portNetSpriteIndex, portNetUpWidgetIndex, portNetDownWidgetIndex, cachedPortDepth);
         }
     }
 
-    private void renderStarboardHighlight(Graphics2D graphics, Widget parent, Color highlightColor) {
-        Widget starboardDepthWidget = parent.getChild(STARBOARD_DEPTH_WIDGET_INDEX);
-        if (isWidgetInteractable(starboardDepthWidget)) {
-            highlightNetButton(graphics, parent, cachedStarboardDepth, cachedRequiredDepth, 
-                              STARBOARD_UP, STARBOARD_DOWN, highlightColor);
+    private void renderNetHighlight(Graphics2D graphics, Widget parent, Color highlightColor, 
+                                   int netSpriteIndex, int netUpWidgetIndex, int netDownWidgetIndex, ShoalDepth cachedDepth) {
+        Widget netDepthWidget = parent.getChild(netSpriteIndex);
+        if (netDepthWidget == null) return;
+        if (starboardNetUpWidgetIndex == 0 || starboardNetDownWidgetIndex == 0)
+        {
+            initializeWidgetIndices();
         }
-    }
 
-    private void renderPortHighlight(Graphics2D graphics, Widget parent, Color highlightColor) {
-        Widget portDepthWidget = parent.getChild(PORT_DEPTH_WIDGET_INDEX);
-        if (isWidgetInteractable(portDepthWidget)) {
-            highlightNetButton(graphics, parent, cachedPortDepth, cachedRequiredDepth,
-                              PORT_UP, PORT_DOWN, highlightColor);
+        if (isWidgetInteractable(netDepthWidget)) {
+            highlightNetButton(graphics, parent, cachedDepth, cachedRequiredDepth,
+                    netUpWidgetIndex, netDownWidgetIndex, highlightColor);
         }
     }
 
@@ -361,5 +415,29 @@ public class NetDepthButtonHighlighter extends Overlay
             scrollViewport = scrollViewport.getParent();
         }
         return scrollViewport;
+    }
+
+    private void initializeWidgetIndices()
+    {
+        Boat boat = boatTracker.getBoat();
+        if (boat == null) return;
+
+        SizeClass boatSize = boat.getSizeClass();
+        log.debug("Boat Size: {}", boatSize);
+        switch(boatSize)
+        {
+            case SLOOP:
+                SetWidgetIndexForSloop();
+                break;
+            case SKIFF:
+                SetWidgetIndexForSkiff();
+                break;
+            default:
+                return;
+        }
+        log.debug("Starboard Down Found at {}", starboardNetDownWidgetIndex);
+        log.debug("Starboard Up Found at {}", starboardNetUpWidgetIndex);
+        log.debug("Port Down Found at {}", portNetDownWidgetIndex);
+        log.debug("Port Up Found at {}", portNetUpWidgetIndex);
     }
 }

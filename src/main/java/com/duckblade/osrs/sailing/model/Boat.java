@@ -174,11 +174,7 @@ public class Boat
 				.stream()
 				.map(CannonTier::toString)
 				.collect(Collectors.joining(", ", "[", "]")),
-			getWindCatcherTier(),
-			getNetTiers()
-				.stream()
-				.map(FishingNetTier::toString)
-				.collect(Collectors.joining(", ", "[", "]"))
+			getWindCatcherTier()
 		);
 	}
 }
