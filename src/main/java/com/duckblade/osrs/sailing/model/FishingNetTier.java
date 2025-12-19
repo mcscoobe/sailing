@@ -43,7 +43,7 @@ public enum FishingNetTier {
             {
                 if (objectId == id)
                 {
-                return tier;
+                    return tier;
                 }
             }
         }
@@ -54,3 +54,5 @@ public enum FishingNetTier {
         return 125;
     }
 }
+
+
