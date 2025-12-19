@@ -6,6 +6,8 @@ import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.model.FishingNetTier;
 import com.duckblade.osrs.sailing.model.SalvagingHookTier;
+import com.duckblade.osrs.sailing.model.CannonTier;
+import com.duckblade.osrs.sailing.model.WindCatcherTier;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.util.stream.Collectors;
@@ -96,11 +98,34 @@ public class LocalBoatInfoOverlayPanel
 
 		getPanelComponent().getChildren()
 			.add(LineComponent.builder()
+				.left("Chum")
+				.right(String.valueOf(boat.getChumStationTier()))
+				.build());
+
+		getPanelComponent().getChildren()
+			.add(LineComponent.builder()
 				.left("Nets")
 				.right(boat
 					.getNetTiers()
 					.stream()
 					.map(FishingNetTier::toString)
+					.collect(Collectors.joining(", ", "[", "]")))
+				.build());
+
+		getPanelComponent().getChildren()
+			.add(LineComponent.builder()
+				.left("Cannons")
+				.right(boat
+					.getCannonTiers()
+					.stream()
+					.map(CannonTier::toString)
+					.collect(Collectors.joining(", ", "[", "]")))
+				.build());
+
+		getPanelComponent().getChildren()
+			.add(LineComponent.builder()
+				.left("WindCatcher")
+				.right(String.valueOf(boat.getWindCatcherTier()))
 					.collect(Collectors.joining(", ", "[", "]"))
 				)
 				.build());
