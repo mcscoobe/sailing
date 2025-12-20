@@ -37,7 +37,7 @@ public enum ShoalFishingArea
 	ANGLERFISHS_LIGHT(
 		new WorldArea(2672, 2295, 162, 159, 0),
 		ShoalPaths.HADDOCK_ANGLERFISHS_LIGHT,
-		new int[]{0, 14, 33, 40, 52, 65, 74},
+		new int[]{0, 6, 22, 41, 48, 60, 74, 84},
 		Shoal.HADDOCK
 	),
 	MISTY_SEA(
