@@ -54,9 +54,9 @@ public enum ShoalFishingArea
 	),
 
 	DEEPFIN_POINT(
-		new WorldArea(1740, 2665, 285, 216, 0),
+		new WorldArea(1781, 2665, 244, 216, 0),
 		ShoalPaths.YELLOWFIN_DEEPFIN_POINT,
-		new int[]{0, 18, 37, 58, 90, 116, 125, 144, 171, 207, 220},
+		new int[]{0, 20, 42, 74, 100, 117, 136, 163, 197, 211, 237},
 		Shoal.YELLOWFIN
 	),
 	SEA_OF_SOULS(
