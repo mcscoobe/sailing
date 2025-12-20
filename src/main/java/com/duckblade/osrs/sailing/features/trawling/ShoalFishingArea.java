@@ -62,7 +62,7 @@ public enum ShoalFishingArea
 	SEA_OF_SOULS(
 		new WorldArea(2173, 2585, 192, 179, 0),
 		ShoalPaths.YELLOWFIN_SEA_OF_SOULS,
-		new int[]{0, 15, 30, 35, 44, 73, 95, 113, 133, 138, 147, 177},
+		new int[]{0, 18, 38, 43, 53, 84, 107, 124, 140, 145, 155, 183},
 		Shoal.YELLOWFIN
 	),
 	THE_CROWN_JEWEL_TEMP(
