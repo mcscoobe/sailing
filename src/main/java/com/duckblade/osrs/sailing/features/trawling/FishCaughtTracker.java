@@ -4,6 +4,7 @@ import com.duckblade.osrs.sailing.features.util.BoatTracker;
 import com.duckblade.osrs.sailing.features.util.SailingUtil;
 import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -14,7 +15,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.WorldChanged;
 import net.runelite.client.eventbus.Subscribe;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -56,6 +60,22 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
     public void shutDown() {
         log.debug("FishCaughtTracker shut down");
         reset();
+    }
+
+    @Subscribe
+    public void onWorldChanged(WorldChanged e) {
+
+        log.debug("Clear Net as fish do not persist a world change");
+        reset();
+    }
+
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged e)
+    {
+        if (e.getGameState() != GameState.LOGGED_IN){
+            log.debug("Clear Net as fish do not persist a logout");
+            reset();
+        }
     }
 
     @Subscribe
