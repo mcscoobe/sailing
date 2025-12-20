@@ -81,7 +81,7 @@ public enum ShoalFishingArea
 	SOUTHERN_EXPANSE(
 		new WorldArea(1880, 2282, 217, 207, 0),
 		ShoalPaths.HALIBUT_SOUTHERN_EXPANSE,
-		new int[]{0, 23, 46, 80, 128, 145, 176, 201, 229, 241},
+		new int[]{0, 43, 59, 90, 121, 151, 161, 189, 214},
 		Shoal.HALIBUT
 	),
 
