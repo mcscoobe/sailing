@@ -1,13 +1,12 @@
 package com.duckblade.osrs.sailing.features.trawling;
 
 import com.duckblade.osrs.sailing.features.trawling.ShoalPathData.BluefinRainbowReef;
+import com.duckblade.osrs.sailing.features.trawling.ShoalPathData.HalibutSouthernExpanse;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 
 @Getter
-@RequiredArgsConstructor
 public enum ShoalFishingArea
 {
 	GREAT_SOUND(
@@ -79,12 +78,7 @@ public enum ShoalFishingArea
 		new int[]{0, 35, 55, 75, 98, 124, 144, 171, 188},
 		Shoal.HALIBUT
 	),
-	SOUTHERN_EXPANSE(
-		new WorldArea(1880, 2282, 217, 207, 0),
-		ShoalPaths.HALIBUT_SOUTHERN_EXPANSE,
-		new int[]{0, 43, 59, 90, 121, 151, 161, 189, 214},
-		Shoal.HALIBUT
-	),
+	SOUTHERN_EXPANSE(HalibutSouthernExpanse.INSTANCE),
 
 	BUCCANEERS_HAVEN(
 		new WorldArea(1962, 3590, 313, 203, 0),
@@ -92,12 +86,7 @@ public enum ShoalFishingArea
 		new int[]{0, 17, 27, 59, 79, 93, 111, 126, 145, 153, 173, 191},
 		Shoal.BLUEFIN
 	),
-	RAINBOW_REEF(
-		BluefinRainbowReef.AREA,
-        BluefinRainbowReef.getPositions(),
-        BluefinRainbowReef.getStopIndices(),
-        BluefinRainbowReef.SHOAL_TYPE
-	),
+	RAINBOW_REEF(BluefinRainbowReef.INSTANCE),
 	WEISSMERE(
 		new WorldArea(2590, 3945, 281, 202, 0),
 		ShoalPaths.MARLIN_WEISSMERE,
@@ -118,9 +107,44 @@ public enum ShoalFishingArea
 	private final WorldPoint[] path;
 	private final int[] stopIndices;
 	private final Shoal shoal;
+	private final ShoalAreaData areaData; // For interface-based entries
+
+	// Constructor for legacy entries (4 parameters)
+	ShoalFishingArea(WorldArea area, WorldPoint[] path, int[] stopIndices, Shoal shoal) {
+		this.area = area;
+		this.path = path;
+		this.stopIndices = stopIndices;
+		this.shoal = shoal;
+		this.areaData = null;
+	}
+
+	// Constructor for interface-based entries (single parameter)
+	ShoalFishingArea(ShoalAreaData areaData) {
+		this.areaData = areaData;
+		this.area = areaData.getArea();
+		this.path = areaData.getPositions();
+		this.stopIndices = areaData.getStopIndices();
+		this.shoal = areaData.getShoalType();
+	}
 
 	public boolean contains(final WorldPoint wp)
 	{
 		return area.contains(wp);
+	}
+
+	/**
+	 * Get the ShoalAreaData interface if this area uses the new interface-based approach.
+	 * @return ShoalAreaData instance, or null for legacy areas
+	 */
+	public ShoalAreaData getAreaData() {
+		return areaData;
+	}
+
+	/**
+	 * Check if this area uses the new interface-based approach.
+	 * @return true if this area has ShoalAreaData, false for legacy areas
+	 */
+	public boolean hasAreaData() {
+		return areaData != null;
 	}
 }

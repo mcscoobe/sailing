@@ -43,7 +43,7 @@ public class ShoalPathTrackerOverlay extends Overlay implements PluginLifecycleC
 
 	@Override
 	public boolean isEnabled(SailingConfig config) {
-		// Enabled via chat command: ::traceroutes, ::traceroutes on, ::traceroutes off
+		// Enabled via chat command: ::trackroutes, ::trackroutes on, ::trackroutes off
 		return tracerCommand.isTracingEnabled();
 	}
 
