@@ -16,6 +16,14 @@ import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +51,11 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 	private static final int MAX_WAYPOINT_DISTANCE = 30; // World coordinate units (tiles)
 	private static final int MAX_PLAYER_DISTANCE = 300; // World coordinate units (tiles)
 	private static final int AREA_MARGIN = 10; // World coordinate units (tiles)
+	
+	// Output file configuration
+	private static final String OUTPUT_DIR = "src/main/java/com/duckblade/osrs/sailing/features/trawling/ShoalPathData";
+	private static final String OUTPUT_FILE_PREFIX = "";
+	private static final String OUTPUT_FILE_EXTENSION = ".java";
 
 	private final Client client;
 	private final ShoalPathTrackerCommand tracerCommand;
@@ -249,11 +262,223 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 			}
 
 			String shoalName = ShoalPathTracker.this.getShoalName(shoalId);
-			log.debug("=== SHOAL PATH EXPORT (ID: {}, Name: {}) ===", shoalId, shoalName);
-			log.debug("Total waypoints: {}", waypoints.size());
-			log.debug("");
-			log.debug("// Shoal: {} (ID: {}) - Copy this into ShoalPaths.java:", shoalName, shoalId);
-			log.debug("public static final WorldPoint[] SHOAL_{}_PATH = {", shoalId);
+			
+			// Write to file
+			try {
+				writePathToFile(shoalName);
+				ShoalPathTracker.log.info("Shoal path exported to file: {}/{}{}{}", 
+					OUTPUT_DIR, OUTPUT_FILE_PREFIX, shoalId, OUTPUT_FILE_EXTENSION);
+			} catch (IOException e) {
+				ShoalPathTracker.log.error("Failed to write path to file", e);
+				// Fallback to log output
+				logPathToConsole(shoalName);
+			}
+		}
+		
+		private void writePathToFile(String shoalName) throws IOException {
+			// Create output directory if it doesn't exist
+			Path outputDir = Paths.get(OUTPUT_DIR);
+			if (!Files.exists(outputDir)) {
+				Files.createDirectories(outputDir);
+			}
+			
+			// Generate class/enum name
+			String className = "Shoal" + shoalName.replaceAll("[^A-Za-z0-9]", "") + "Area";
+			
+			// Create output file with timestamp
+			String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+			String filename = String.format("%s%s%s", OUTPUT_FILE_PREFIX, className, OUTPUT_FILE_EXTENSION);
+			Path outputFile = outputDir.resolve(filename);
+			
+			// Calculate bounds and stop points
+			int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
+			int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
+			List<Integer> stopPoints = new ArrayList<>();
+			
+			for (int i = 0; i < waypoints.size(); i++) {
+				Waypoint wp = waypoints.get(i);
+				WorldPoint pos = wp.getPosition();
+				
+				minX = Math.min(minX, pos.getX());
+				minY = Math.min(minY, pos.getY());
+				maxX = Math.max(maxX, pos.getX());
+				maxY = Math.max(maxY, pos.getY());
+				
+				if (wp.isStopPoint()) {
+					stopPoints.add(i);
+				}
+			}
+			
+			// Calculate stop duration stats (area-based)
+			List<Integer> durations = waypoints.stream()
+				.filter(Waypoint::isStopPoint)
+				.mapToInt(Waypoint::getStopDuration)
+				.filter(d -> d > 0)
+				.boxed()
+				.collect(Collectors.toList());
+			
+			int avgDuration = -1; // Default fallback
+			if (!durations.isEmpty()) {
+				avgDuration = (int) Math.round(durations.stream().mapToInt(Integer::intValue).average().orElse(68.0));
+			}
+			
+			String enumName = shoalName.toUpperCase().replaceAll("[^A-Z0-9]", "_") + "_AREA";
+			
+			// Write to file
+			try (BufferedWriter writer = Files.newBufferedWriter(outputFile, 
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+				
+				// File header
+				writer.write("// ========================================\n");
+				writer.write("// Shoal Area Export\n");
+				writer.write("// ========================================\n");
+				writer.write("// Shoal: " + shoalName + "\n");
+				writer.write("// Shoal ID: " + shoalId + "\n");
+				writer.write("// Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "\n");
+				writer.write("// Total waypoints: " + waypoints.size() + "\n");
+				writer.write("// Stop points: " + stopPoints.size() + "\n");
+				writer.write("// Area-based stop duration: " + avgDuration + " ticks\n");
+				writer.write("// ========================================\n\n");
+				
+				// Package and imports
+				writer.write("package com.duckblade.osrs.sailing.features.trawling.ShoalPathData;\n\n");
+				writer.write("import com.duckblade.osrs.sailing.features.trawling.Shoal;\n");
+				writer.write("import com.duckblade.osrs.sailing.features.trawling.ShoalWaypoint;\n");
+				writer.write("import net.runelite.api.coords.WorldArea;\n");
+				writer.write("import net.runelite.api.coords.WorldPoint;\n\n");
+				
+				// Class definition with complete area data
+				writer.write("/**\n");
+				writer.write(" * Shoal area definition for " + shoalName + " (ID: " + shoalId + ")\n");
+				writer.write(" * Contains waypoint path, area bounds, and stop duration.\n");
+				writer.write(" * Generated by ShoalPathTracker on " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "\n");
+				writer.write(" */\n");
+				writer.write("public class " + className + " {\n\n");
+				
+				// Area bounds
+				int areaX = minX - AREA_MARGIN;
+				int areaY = minY - AREA_MARGIN;
+				int areaWidth = maxX - minX + 2 * AREA_MARGIN;
+				int areaHeight = maxY - minY + 2 * AREA_MARGIN;
+				
+				writer.write("\t/** Area bounds for this shoal region */\n");
+				writer.write(String.format("\tpublic static final WorldArea AREA = new WorldArea(%d, %d, %d, %d, 0);\n\n",
+					areaX, areaY, areaWidth, areaHeight));
+				
+				// Stop duration
+				writer.write("\t/** Duration in ticks that shoals stop at each stop point in this area */\n");
+				writer.write("\tpublic static final int STOP_DURATION = " + avgDuration + ";\n\n");
+				
+				// Shoal type
+				writer.write("\t/** Shoal type for this area */\n");
+				writer.write("\tpublic static final Shoal SHOAL_TYPE = Shoal." + shoalName.toUpperCase().replace(" ", "_") + ";\n\n");
+				
+				// Waypoints array
+				writer.write("\t/** Complete waypoint path with stop point information */\n");
+				writer.write("\tpublic static final ShoalWaypoint[] WAYPOINTS = {\n");
+				
+				for (Waypoint wp : waypoints) {
+					WorldPoint pos = wp.getPosition();
+					writer.write(String.format("\t\tnew ShoalWaypoint(new WorldPoint(%d, %d, %d), %s),\n",
+						pos.getX(), pos.getY(), pos.getPlane(), 
+						wp.isStopPoint() ? "true" : "false"));
+				}
+				
+				writer.write("\t};\n\n");
+				
+				// Helper methods
+				writer.write("\t/**\n");
+				writer.write("\t * Check if a world point is within this shoal area.\n");
+				writer.write("\t */\n");
+				writer.write("\tpublic static boolean contains(WorldPoint point) {\n");
+				writer.write("\t\treturn AREA.contains(point);\n");
+				writer.write("\t}\n\n");
+				
+				writer.write("\t/**\n");
+				writer.write("\t * Get all waypoint positions as WorldPoint array (for compatibility).\n");
+				writer.write("\t */\n");
+				writer.write("\tpublic static WorldPoint[] getPositions() {\n");
+				writer.write("\t\treturn ShoalWaypoint.getPositions(WAYPOINTS);\n");
+				writer.write("\t}\n\n");
+				
+				writer.write("\t/**\n");
+				writer.write("\t * Get stop point indices (for compatibility).\n");
+				writer.write("\t */\n");
+				writer.write("\tpublic static int[] getStopIndices() {\n");
+				writer.write("\t\treturn ShoalWaypoint.getStopIndices(WAYPOINTS);\n");
+				writer.write("\t}\n\n");
+				
+				writer.write("\t/**\n");
+				writer.write("\t * Get the number of stop points in this area.\n");
+				writer.write("\t */\n");
+				writer.write("\tpublic static int getStopPointCount() {\n");
+				writer.write("\t\treturn ShoalWaypoint.getStopPointCount(WAYPOINTS);\n");
+				writer.write("\t}\n");
+				
+				writer.write("}\n\n");
+				
+				// Enum entry for ShoalFishingArea
+				writer.write("// ========================================\n");
+				writer.write("// Integration with ShoalFishingArea enum\n");
+				writer.write("// ========================================\n");
+				writer.write("// Add this entry to ShoalFishingArea enum:\n");
+				writer.write("/*\n");
+				writer.write(enumName + "(\n");
+				writer.write("\t" + className + ".AREA,\n");
+				writer.write("\t" + className + ".WAYPOINTS,\n");
+				writer.write("\t" + className + ".STOP_DURATION,\n");
+				writer.write("\t" + className + ".SHOAL_TYPE\n");
+				writer.write("),\n");
+				writer.write("*/\n\n");
+				
+				// Usage examples
+				writer.write("// ========================================\n");
+				writer.write("// Usage Examples\n");
+				writer.write("// ========================================\n");
+				writer.write("// Check if player is in area:\n");
+				writer.write("// boolean inArea = " + className + ".contains(playerLocation);\n\n");
+				writer.write("// Get waypoints for rendering:\n");
+				writer.write("// WorldPoint[] path = " + className + ".getPositions();\n\n");
+				writer.write("// Get stop duration:\n");
+				writer.write("// int duration = " + className + ".STOP_DURATION;\n\n");
+				
+				// Detailed analysis
+				writer.write("// ========================================\n");
+				writer.write("// Analysis Data\n");
+				writer.write("// ========================================\n");
+				writer.write("// Area bounds: " + areaX + ", " + areaY + ", " + areaWidth + ", " + areaHeight + "\n");
+				writer.write("// Stop points: " + stopPoints.size() + " total\n");
+				if (!durations.isEmpty()) {
+					int minDuration = durations.stream().mapToInt(Integer::intValue).min().orElse(0);
+					int maxDuration = durations.stream().mapToInt(Integer::intValue).max().orElse(0);
+					writer.write(String.format("// Duration range: %d - %d ticks (avg: %d)\n", 
+						minDuration, maxDuration, avgDuration));
+				}
+				
+				// Stop point details
+				writer.write("// Stop point details:\n");
+				for (int i = 0; i < waypoints.size(); i++) {
+					Waypoint wp = waypoints.get(i);
+					if (wp.isStopPoint()) {
+						int stopNumber = stopPoints.indexOf(i) + 1;
+						writer.write(String.format("// Stop %d (index %d): %s\n",
+							stopNumber, i, wp.getPosition()));
+					}
+				}
+				
+				writer.write("\n// ========================================\n");
+				writer.write("// End of Export\n");
+				writer.write("// ========================================\n");
+			}
+		}
+		
+		private void logPathToConsole(String shoalName) {
+			// Fallback: log to console in old format
+			ShoalPathTracker.log.debug("=== SHOAL PATH EXPORT (ID: {}, Name: {}) ===", shoalId, shoalName);
+			ShoalPathTracker.log.debug("Total waypoints: {}", waypoints.size());
+			ShoalPathTracker.log.debug("");
+			ShoalPathTracker.log.debug("// Shoal: {} (ID: {}) - Copy this into ShoalPaths.java:", shoalName, shoalId);
+			ShoalPathTracker.log.debug("public static final WorldPoint[] SHOAL_{}_PATH = {", shoalId);
 
 			int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
 			int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
@@ -262,7 +487,7 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 				Waypoint wp = waypoints.get(i);
 				WorldPoint pos = wp.getPosition();
 				String comment = wp.isStopPoint() ? " // STOP POINT" : "";
-				log.debug("    new WorldPoint({}, {}, {}),{}",
+				ShoalPathTracker.log.debug("    new WorldPoint({}, {}, {}),{}",
 					pos.getX(), pos.getY(), pos.getPlane(), comment);
 
 				minX = Math.min(minX, pos.getX());
@@ -275,17 +500,17 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 				}
 			}
 			
-			log.debug("};");
-			log.debug("");
-			log.debug("Stop points: {}", waypoints.stream().filter(Waypoint::isStopPoint).count());
-			log.debug("");
+			ShoalPathTracker.log.debug("};");
+			ShoalPathTracker.log.debug("");
+			ShoalPathTracker.log.debug("Stop points: {}", waypoints.stream().filter(Waypoint::isStopPoint).count());
+			ShoalPathTracker.log.debug("");
 			
 			// Log stop durations for analysis
-			log.debug("Stop durations (ticks):");
+			ShoalPathTracker.log.debug("Stop durations (ticks):");
 			for (int i = 0; i < waypoints.size(); i++) {
 				Waypoint wp = waypoints.get(i);
 				if (wp.isStopPoint() && wp.getStopDuration() > 0) {
-					log.debug("  Stop {} (index {}): {} ticks at {}", 
+					ShoalPathTracker.log.debug("  Stop {} (index {}): {} ticks at {}", 
 						stopPoints.indexOf(i) + 1, i, wp.getStopDuration(), wp.getPosition());
 				}
 			}
@@ -302,21 +527,21 @@ public class ShoalPathTracker implements PluginLifecycleComponent {
 				double avgDuration = durations.stream().mapToInt(Integer::intValue).average().orElse(0.0);
 				int minDuration = durations.stream().mapToInt(Integer::intValue).min().orElse(0);
 				int maxDuration = durations.stream().mapToInt(Integer::intValue).max().orElse(0);
-				log.debug("Duration stats - Avg: {}, Min: {}, Max: {} ticks", avgDuration, minDuration, maxDuration);
+				ShoalPathTracker.log.debug("Duration stats - Avg: {}, Min: {}, Max: {} ticks", avgDuration, minDuration, maxDuration);
 			}
 			else
 			{
-				log.debug("Duration empty, we simply just dont know");
+				ShoalPathTracker.log.debug("Duration empty, we simply just dont know");
 			}
-			log.debug("");
+			ShoalPathTracker.log.debug("");
 			
-			log.debug("// Copy this into TrawlingData.java:");
-			log.debug("AREA = {}, {}, {}, {}",
+			ShoalPathTracker.log.debug("// Copy this into TrawlingData.java:");
+			ShoalPathTracker.log.debug("AREA = {}, {}, {}, {}",
 				minX - AREA_MARGIN, maxX + AREA_MARGIN, minY - AREA_MARGIN, maxY + AREA_MARGIN
 			);
-			log.debug("// Copy this into ShoalPathOverlay.java:");
-			log.debug("STOP_INDICES = {};", stopPoints);
-			log.debug("=====================================");
+			ShoalPathTracker.log.debug("// Copy this into ShoalPathOverlay.java:");
+			ShoalPathTracker.log.debug("STOP_INDICES = {};", stopPoints);
+			ShoalPathTracker.log.debug("=====================================");
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.duckblade.osrs.sailing.features.trawling;
 
+import com.duckblade.osrs.sailing.features.trawling.ShoalPathData.BluefinRainbowReef;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.coords.WorldArea;
@@ -92,10 +93,10 @@ public enum ShoalFishingArea
 		Shoal.BLUEFIN
 	),
 	RAINBOW_REEF(
-		new WorldArea(2099, 2211, 288, 191, 0),
-		ShoalPaths.BLUEFIN_RAINBOW_REEF,
-		new int[]{0, 13, 45, 75, 93, 119, 136, 160, 169, 192},
-		Shoal.BLUEFIN
+		BluefinRainbowReef.AREA,
+        BluefinRainbowReef.getPositions(),
+        BluefinRainbowReef.getStopIndices(),
+        BluefinRainbowReef.SHOAL_TYPE
 	),
 	WEISSMERE(
 		new WorldArea(2590, 3945, 281, 202, 0),

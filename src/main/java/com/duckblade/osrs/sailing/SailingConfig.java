@@ -494,11 +494,23 @@ public interface SailingConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "trawlingShowShoalDirectionArrows",
+		name = "Show Direction Arrows",
+		description = "Display directional arrows along shoal routes to indicate movement direction.",
+		section = SECTION_TRAWLING,
+		position = 8
+	)
+	default boolean trawlingShowShoalDirectionArrows()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "highlightNetButtons",
 		name = "Highlight Net Buttons ",
 		description = "Highlight the net button to move to the correct shoal depth.",
 		section = SECTION_TRAWLING,
-		position = 8
+		position = 9
 	)
 	default boolean highlightNetButtons()
 	{

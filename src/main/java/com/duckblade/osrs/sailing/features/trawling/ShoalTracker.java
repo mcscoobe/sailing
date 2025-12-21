@@ -102,6 +102,9 @@ public class ShoalTracker implements PluginLifecycleComponent {
     @Getter
     private int stationaryTicks = 0;
     
+    // Health-based movement tracking
+    private int previousHealthRatio = -1;
+    
     // Depth tracking
     /**
      * -- GETTER --
@@ -319,7 +322,30 @@ public class ShoalTracker implements PluginLifecycleComponent {
         
         updateLocation();
         updateShoalDepth();
-        trackMovement();
+        trackMovementByHealth();
+        
+        // Log NPC health if shoal NPC exists
+        if (currentShoalNpc != null) {
+            int healthRatio = currentShoalNpc.getHealthRatio();
+            int healthScale = currentShoalNpc.getHealthScale();
+            log.debug("Shoal NPC health: {}/{} (ratio: {})", healthRatio, healthScale, 
+                     healthScale > 0 ? (double) healthRatio / healthScale : 0.0);
+        }
+    }
+    
+    private void trackMovementByHealth() {
+        if (currentShoalNpc == null) {
+            return;
+        }
+        
+        int currentHealthRatio = currentShoalNpc.getHealthRatio();
+        
+        // Check if health dropped below 1 (indicating shoal is about to move)
+        if (previousHealthRatio >= 1 && currentHealthRatio < 1) {
+            checkMovementNotification();
+        }
+        
+        previousHealthRatio = currentHealthRatio;
     }
     
     private void trackMovement() {
@@ -370,6 +396,7 @@ public class ShoalTracker implements PluginLifecycleComponent {
         previousTickLocation = null;
         wasMoving = false;
         stationaryTicks = 0;
+        previousHealthRatio = -1;
     }
 
     // Event handlers
@@ -396,11 +423,13 @@ public class ShoalTracker implements PluginLifecycleComponent {
 
     private void handleShoalNpcSpawned(NPC npc) {
         currentShoalNpc = npc;
+        previousHealthRatio = npc.getHealthRatio(); // Initialize health tracking
         updateShoalDepth();
     }
 
     private void handleShoalNpcDespawned(NPC npc) {
         currentShoalNpc = null;
+        previousHealthRatio = -1; // Reset health tracking
         updateShoalDepth();
     }
 

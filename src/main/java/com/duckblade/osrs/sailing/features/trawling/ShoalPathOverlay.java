@@ -24,6 +24,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
 import java.util.List;
 
 @Slf4j
@@ -35,6 +36,11 @@ public class ShoalPathOverlay extends Overlay implements PluginLifecycleComponen
 	private final BoatTracker boatTracker;
 
 	public static final int MAX_SPLITTABLE_DISTANCE = 10;
+	
+	// Arrow spacing - draw an arrow every N points along the path
+	private static final int ARROW_SPACING = 5;
+	// Arrow size in pixels
+	private static final int ARROW_SIZE = 8;
 
 	// Color for stop point overlays (red)
 	private static final Color STOP_POINT_COLOR = Color.RED;
@@ -88,6 +94,9 @@ public class ShoalPathOverlay extends Overlay implements PluginLifecycleComponen
 			}
 
 			renderPath(graphics, area.getPath(), pathColor);
+			if (config.trawlingShowShoalDirectionArrows()) {
+				renderDirectionalArrows(graphics, area.getPath(), pathColor);
+			}
 			renderStopPoints(graphics, area.getPath(), area.getStopIndices());
 		}
 
@@ -167,6 +176,84 @@ public class ShoalPathOverlay extends Overlay implements PluginLifecycleComponen
 
 		renderSegment(graphics, worldPoint1, midPoint, pathColor);
 		renderSegment(graphics, midPoint, worldPoint2, pathColor);
+	}
+
+	private void renderDirectionalArrows(Graphics2D graphics, WorldPoint[] path, Color pathColor) {
+		if (path == null || path.length < 2) {
+			return;
+		}
+
+		graphics.setStroke(new BasicStroke(1));
+		graphics.setColor(pathColor);
+
+		// Draw arrows at regular intervals along the path
+		for (int i = 0; i < path.length - 1; i += ARROW_SPACING) {
+			WorldPoint currentPoint = path[i];
+			WorldPoint nextPoint = path[i + 1];
+			
+			renderArrowAtSegment(graphics, currentPoint, nextPoint, pathColor);
+		}
+		
+		// Also draw an arrow for the closing segment (back to start)
+		if (path.length > 2) {
+			renderArrowAtSegment(graphics, path[path.length - 1], path[0], pathColor);
+		}
+	}
+
+	private void renderArrowAtSegment(Graphics2D graphics, WorldPoint fromPoint, WorldPoint toPoint, Color pathColor) {
+		LocalPoint localFrom = LocalPoint.fromWorld(client, fromPoint);
+		LocalPoint localTo = LocalPoint.fromWorld(client, toPoint);
+		
+		if (localFrom == null || localTo == null) {
+			return;
+		}
+
+		Point canvasFrom = Perspective.localToCanvas(client, localFrom, fromPoint.getPlane());
+		Point canvasTo = Perspective.localToCanvas(client, localTo, toPoint.getPlane());
+		
+		if (canvasFrom == null || canvasTo == null) {
+			return;
+		}
+
+		// Calculate the midpoint of the segment for arrow placement
+		int midX = (canvasFrom.getX() + canvasTo.getX()) / 2;
+		int midY = (canvasFrom.getY() + canvasTo.getY()) / 2;
+
+		// Calculate direction vector
+		double dx = canvasTo.getX() - canvasFrom.getX();
+		double dy = canvasTo.getY() - canvasFrom.getY();
+		double length = Math.sqrt(dx * dx + dy * dy);
+		
+		if (length < 1) {
+			return; // Skip if points are too close
+		}
+
+		// Normalize direction vector
+		dx /= length;
+		dy /= length;
+
+		// Draw arrowhead
+		drawArrowhead(graphics, midX, midY, dx, dy, pathColor);
+	}
+
+	private void drawArrowhead(Graphics2D graphics, int x, int y, double dirX, double dirY, Color color) {
+		graphics.setColor(color);
+		
+		// Calculate arrowhead points
+		double arrowAngle = Math.PI / 6; // 30 degrees
+		double arrowLength = ARROW_SIZE;
+		
+		// Left wing of arrow
+		double leftX = x - arrowLength * (dirX * Math.cos(arrowAngle) - dirY * Math.sin(arrowAngle));
+		double leftY = y - arrowLength * (dirY * Math.cos(arrowAngle) + dirX * Math.sin(arrowAngle));
+		
+		// Right wing of arrow
+		double rightX = x - arrowLength * (dirX * Math.cos(-arrowAngle) - dirY * Math.sin(-arrowAngle));
+		double rightY = y - arrowLength * (dirY * Math.cos(-arrowAngle) + dirX * Math.sin(-arrowAngle));
+		
+		// Draw the arrowhead lines
+		graphics.drawLine(x, y, (int)leftX, (int)leftY);
+		graphics.drawLine(x, y, (int)rightX, (int)rightY);
 	}
 
 	private void renderStopPoints(Graphics2D graphics, WorldPoint[] path, int[] stopIndices) {
