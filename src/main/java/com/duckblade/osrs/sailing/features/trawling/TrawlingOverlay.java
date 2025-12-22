@@ -67,17 +67,19 @@ public class TrawlingOverlay extends OverlayPanel
 
         // Add fish caught section if enabled and available
         if (shouldShowFishCaught()) {
-            Map<String, Integer> fishCaught = fishCaughtTracker.getFishCaught();
+            var fishCaught = fishCaughtTracker.getFishCaught();
             if (!fishCaught.isEmpty()) {
                 if (hasContent) {
                     panelComponent.getChildren().add(LineComponent.builder().build());
                 }
 
                 int totalFish = fishCaught.values().stream().reduce(Integer::sum).orElse(0);
-                for (Map.Entry<String, Integer> fish : fishCaught.entrySet()) {
+                for (var entry : fishCaught.entrySet()) {
+                    var shoal = entry.getKey();
                     panelComponent.getChildren().add(LineComponent.builder()
-                        .left(WordUtils.capitalize(fish.getKey()))
-                        .right(String.format("%d (%.0f%%)", fish.getValue(), 100f * fish.getValue() / totalFish))
+                        .leftColor(shoal.getColor())
+                        .left(shoal.getName())
+                        .right(String.format("%d (%.0f%%)", entry.getValue(), 100f * entry.getValue() / totalFish))
                         .build());
                 }
 
