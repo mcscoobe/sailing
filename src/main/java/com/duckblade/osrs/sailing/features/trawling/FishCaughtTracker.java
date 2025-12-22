@@ -5,6 +5,7 @@ import com.duckblade.osrs.sailing.features.util.SailingUtil;
 import com.duckblade.osrs.sailing.model.Boat;
 import com.duckblade.osrs.sailing.module.PluginLifecycleComponent;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -31,12 +32,12 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
     /**
      * All the fish that was caught into the net since it was last emptied.
      */
-    private final Map<String, Integer> fishInNet = new HashMap<>();
+    private final EnumMap<Shoal, Integer> fishInNet = new EnumMap<>(Shoal.class);
 
     /**
      * All the fish that was collected by emptying the nets.
      */
-    private final Map<String, Integer> fishCollected = new HashMap<>();
+    private final EnumMap<Shoal, Integer> fishCollected = new EnumMap<>(Shoal.class);
 
     /**
      * Creates a new FishCaughtTracker with the specified dependencies.
@@ -107,9 +108,14 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
             return;
         }
 
+        final var shoal = Shoal.byName(fish);
+        if (shoal == null) {
+            return;
+        }
+
         log.debug(message);
-        log.debug("{} {} caught by {}; total: {}", quantity, fish, catcher, fishInNet.get(fish));
-        fishInNet.merge(fish, quantity, Integer::sum);
+        log.debug("{} {} caught by {}; total: {}", quantity, fish, catcher, fishInNet.get(shoal));
+        fishInNet.merge(shoal, quantity, Integer::sum);
     }
 
     private int wordToNumber(String word) {
@@ -148,8 +154,8 @@ public class FishCaughtTracker implements PluginLifecycleComponent {
     /**
      * All fish caught, either currently in the net or previously collected.
      */
-    public Map<String, Integer> getFishCaught() {
-        Map<String, Integer> fishCaught = new HashMap<>(fishCollected);
+    public Map<Shoal, Integer> getFishCaught() {
+        var fishCaught = new EnumMap<>(fishCollected);
         for (var entry : fishInNet.entrySet()) {
             fishCaught.merge(entry.getKey(), entry.getValue(), Integer::sum);
         }
