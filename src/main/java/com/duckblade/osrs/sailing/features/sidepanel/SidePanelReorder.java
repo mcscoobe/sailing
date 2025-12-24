@@ -108,7 +108,7 @@ public class SidePanelReorder implements PluginLifecycleComponent
 	@Nullable
 	private int[] customRowOrder;
 
-	private int rowBaseY = ROW_BASE_Y_EXPANDED;
+	private int rowBaseY = ROW_BASE_Y_DEFAULT;
 
 	private boolean reordering;
 
