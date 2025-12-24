@@ -34,7 +34,6 @@ public class BluefinRainbowReef implements ShoalAreaData {
 		new ShoalWaypoint(new WorldPoint(2202, 2385, 0), false),
 		new ShoalWaypoint(new WorldPoint(2195, 2391, 0), false),
 		new ShoalWaypoint(new WorldPoint(2164, 2391, 0), false),
-		new ShoalWaypoint(new WorldPoint(2147, 2386, 0), false),
 		new ShoalWaypoint(new WorldPoint(2147, 2384, 0), true),
 		new ShoalWaypoint(new WorldPoint(2141, 2376, 0), false),
 		new ShoalWaypoint(new WorldPoint(2115, 2361, 0), false),
