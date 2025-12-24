@@ -957,7 +957,7 @@ public interface SailingConfig extends Config
 		return Notification.OFF;
 	}
 
-	String CONFIG_KEY_PREFIX_SIDE_PANEL_HOTSPOT = "sidePanelHotspot_";
+	String CONFIG_KEY_PREFIX_SIDE_PANEL_REORDER = "sidePanelReorder_";
 	String CONFIG_KEY_DEFAULT_STEERING_ASSIGN_BUTTON = "defaultSteeringAssignButton";
 
 	@ConfigItem(

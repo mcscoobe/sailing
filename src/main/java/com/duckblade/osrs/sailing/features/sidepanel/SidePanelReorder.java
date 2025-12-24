@@ -181,23 +181,8 @@ public class SidePanelReorder implements PluginLifecycleComponent
 					disableReordering();
 				}
 				break;
-			case VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT0:
-				if (getBoatType() == 0) // Raft
-				{
-					loadCustomRowOrder();
-				}
-				break;
-			case VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT6:
-				if (getBoatType() == 1) // Skiff
-				{
-					loadCustomRowOrder();
-				}
-				break;
-			case VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT10:
-				if (getBoatType() == 2) // Sloop
-				{
-					loadCustomRowOrder();
-				}
+			case VarbitID.SAILING_BOAT_SPAWNED:
+				loadCustomRowOrder();
 				break;
 			default:
 				break;
@@ -241,8 +226,7 @@ public class SidePanelReorder implements PluginLifecycleComponent
 			customRowOrder[idx] = customRowOrder[swap];
 			customRowOrder[swap] = tmp;
 
-			final var id = packHotspots();
-			saveCustomRowOrder(id, customRowOrder);
+			saveCustomRowOrder();
 
 			clientThread.invokeLater(this::redrawSidePanel);
 		}
@@ -315,7 +299,7 @@ public class SidePanelReorder implements PluginLifecycleComponent
 			alignSteerAssignButton(clickLayer.getChildren(), rows.getChildren());
 		}
 
-		// first-run / sanity check
+		// first-run or facilities changed
 		final var rowCount = (rows.getOriginalHeight() - rowBaseY) / ROW_HEIGHT;
 		if (customRowOrder == null || customRowOrder.length != rowCount)
 		{
@@ -491,9 +475,9 @@ public class SidePanelReorder implements PluginLifecycleComponent
 		return client.getVarbitValue(VarbitID.SAILING_PLAYER_IS_ON_PLAYER_BOAT) == 1;
 	}
 
-	private int getBoatType()
+	private int getBoatSlot()
 	{
-		return client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT_TYPE);
+		return client.getVarbitValue(VarbitID.SAILING_BOAT_SPAWNED);
 	}
 
 	private boolean isMarkerSet()
@@ -579,10 +563,21 @@ public class SidePanelReorder implements PluginLifecycleComponent
 		rowBaseY = config.defaultSteeringAssignButton() ? ROW_BASE_Y_DEFAULT : ROW_BASE_Y_EXPANDED;
 	}
 
-	private void saveCustomRowOrder(final long id, final int[] rowOrder)
+	private void saveCustomRowOrder()
 	{
-		final var key = SailingConfig.CONFIG_KEY_PREFIX_SIDE_PANEL_HOTSPOT + id;
-		final var value = Arrays.stream(rowOrder)
+		if (customRowOrder == null)
+		{
+			return;
+		}
+
+		final var boatSlot = getBoatSlot();
+		if (boatSlot <= 0)
+		{
+			return;
+		}
+
+		final var key = configKey(boatSlot);
+		final var value = Arrays.stream(customRowOrder)
 			.mapToObj(Integer::toString)
 			.collect(Collectors.joining(","));
 		configManager.setConfiguration(SailingConfig.CONFIG_GROUP, key, value);
@@ -590,13 +585,13 @@ public class SidePanelReorder implements PluginLifecycleComponent
 
 	private void loadCustomRowOrder()
 	{
-		final var id = packHotspots();
-		if (id <= 0)
+		final var boatSlot = getBoatSlot();
+		if (boatSlot <= 0)
 		{
 			return;
 		}
 
-		final var key = SailingConfig.CONFIG_KEY_PREFIX_SIDE_PANEL_HOTSPOT + id;
+		final var key = configKey(boatSlot);
 		final var value = configManager.getConfiguration(SailingConfig.CONFIG_GROUP, key);
 		if (value == null)
 		{
@@ -608,20 +603,8 @@ public class SidePanelReorder implements PluginLifecycleComponent
 			.toArray();
 	}
 
-	private long packHotspots()
+	private static String configKey(final int boatSlot)
 	{
-		// DBTableID.SailingBoatHotspot row indices
-		// https://abextm.github.io/cache2/#/viewer/dbtable/175
-		return ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT0) & 0x1F)
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT1) & 0x1F) << 5
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT2) & 0x1F) << 10
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT3) & 0x1F) << 15
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT4) & 0x1F) << 20
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT5) & 0x1F) << 25
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT6) & 0x1F) << 30
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT7) & 0x1F) << 35
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT8) & 0x1F) << 40
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT9) & 0x1F) << 45
-			| ((long) client.getVarbitValue(VarbitID.SAILING_SIDEPANEL_FACILITY_HOTSPOT10) & 0x1F) << 50;
+		return SailingConfig.CONFIG_KEY_PREFIX_SIDE_PANEL_REORDER + boatSlot;
 	}
 }
